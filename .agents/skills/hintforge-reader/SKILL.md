@@ -67,9 +67,11 @@ Do not activate for authoring or maintenance intents (those belong to the `hintf
 This skill speaks `corpus-core-version` in the range `[MIN_SUPPORTED_CORE, MAX_SUPPORTED_CORE]`:
 
 - `MIN_SUPPORTED_CORE: 1`
-- `MAX_SUPPORTED_CORE: 1`
+- `MAX_SUPPORTED_CORE: 2`
 
-These bound the universal-core contract (the four universal directories, the six universal files, the manifest format itself, and the claim-tag syntax) that this skill knows how to route and parse. New vector extensions or new content within existing files do not bump the version; the universal core's shape is what does. See the corpus format spec linked under "Corpus format reference" below for the bump rule.
+These bound the universal-core contract (the four universal directories, the six universal files, the manifest format itself, and the claim-tag syntax) that this skill knows how to route and parse. New vector extensions or new content within existing files do not bump the version; the universal core's shape is what does. See the corpus format spec linked under "Corpus format reference" below for the bump rule and the version history.
+
+**v2 specifics this reader handles.** v2 added a required `capture-method` field on every claim (value vocabulary `web_fetch | special_export | breezewiki | archive_ph | manual_paste`). This reader parses the field silently when present and does not surface it in persona output -- the field exists for corpus audit, not for in-character recitation. When reading a v1 corpus (warning-eligible per the mismatch behavior below), simply skip `capture-method` lookups; no other v2 behavior is gated on the field.
 
 ### Version mismatch behavior
 
@@ -78,7 +80,7 @@ Warn once at session start, then proceed. There is no hard stop. If the corpus v
 - **Corpus newer than the reader** (`corpus-core-version > MAX_SUPPORTED_CORE`): say "Heads up -- this guide was built in a newer Hintforge format than I fully understand. Some lookups may miss. To make this warning go away, update the reader skill."
 - **Corpus older than the reader** (`corpus-core-version < MIN_SUPPORTED_CORE`): say "Heads up -- this guide was built in an older Hintforge format than I expect. Some lookups may miss. To make this warning go away, rebuild this guide with a current builder."
 
-Then continue the session normally. The player decides whether the rough edges are acceptable.
+Then continue the session normally. The player decides whether the rough edges are acceptable. v1 corpora read by this v2-capable reader are **inside** the supported range (`MIN=1`), so no warning fires for the v1→v2 transition; the reader simply skips `capture-method` lookups on those corpora.
 
 ## Persona discipline
 

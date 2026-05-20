@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Builder / authoring-side bug
+    url: https://github.com/dtiger1889-ops/hintforge/issues/new/choose
+    about: For setup wizard, ingestion, stitch, zipper, corpus-format spec questions, or feature requests on the authoring side, file at hintforge instead.
+  - name: Game-specific guide content
+    url: https://github.com/dtiger1889-ops/hintforge-atomic-heart/issues/new
+    about: Issues with a specific game's guide content (e.g. "this puzzle solution is wrong") belong on the guide's own repo, not this one.

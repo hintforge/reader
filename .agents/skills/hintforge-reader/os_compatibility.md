@@ -1,6 +1,6 @@
-# OS + Bot Compatibility -- Player-Facing
+# OS Compatibility -- Player-Facing
 
-What you need to run a hintforge guide on your machine, and what to expect across OS / AI-bot combinations. For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/os_compatibility.md).
+What you need to run a hintforge guide on your machine, on a per-OS basis. Runtime-specific caveats (Claude Code, Cowork, browser claude.ai, Codex, OpenClaw) live with each runtime's install doc -- see [`../../../docs/install/`](../../../docs/install/). For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/os_compatibility.md).
 
 ## Verified-running setup
 
@@ -33,7 +33,6 @@ Known gaps: TTS hook is Windows-only; save_watcher paths assume Windows defaults
 
 This sets honest expectations and invites contribution to fill gaps. The full bot-compatibility bar and adaptation roadmap (for porters) lives in the maintainer-facing companion doc.
 
-## Known incompatibilities
+## Runtime caveats
 
-- **Cowork** (Anthropic's collaborative workspace) -- session-scoped, files don't persist locally; tends to hallucinate framework rules instead of loading the per-folder `CLAUDE.md`. The wizard detects this and warns before doing any work.
-- **claude.ai in a browser** without a filesystem connector -- same persistence problem.
+Runtime-specific limitations (Cowork session-scoping, browser claude.ai persistence, etc.) live with each runtime's install doc rather than in this OS-only matrix. For Claude Code (including Cowork and browser claude.ai), see [`../../../docs/install/claude-code.md`](../../../docs/install/claude-code.md). For Codex and OpenClaw, see the matching install docs.

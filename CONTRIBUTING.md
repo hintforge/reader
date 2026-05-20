@@ -22,7 +22,7 @@ Open issues at [`hintforge`](https://github.com/dtiger1889-ops/hintforge) for:
 
 **Edge case.** A bug that surfaces in the reader but turns out to be a corpus-format ambiguity should land here as a triage issue, get diagnosed, then move to `hintforge` (where the format spec lives).
 
-Game-specific guide content lives in the corresponding guide repo (e.g. `hintforge-atomic-heart`), not here.
+Game-specific guide content lives in that guide's own repo, not here.
 
 ## License inheritance
 

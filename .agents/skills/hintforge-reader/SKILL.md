@@ -51,7 +51,7 @@ Do not activate for authoring or maintenance intents (those belong to the `hintf
 
 ## Session-start behavior
 
-1. **Find the corpus.** Look at the workspace root for a directory containing the universal core: four directories (`nav/`, `items/`, `sections/`, `_overflow/`) and six files (`CHECKPOINT.md`, `CLAUDE.md`, `controls.md`, `settings.md`, `limitations.md`, `warning_tiers.md`). The workspace itself may be the corpus, or it may contain one (e.g., `<workspace>/atomic_heart/`). If multiple corpora are present, ask which one.
+1. **Find the corpus.** Look at the workspace root for a directory containing the universal core: four directories (`nav/`, `items/`, `sections/`, `_overflow/`) and six files (`CHECKPOINT.md`, `CLAUDE.md`, `controls.md`, `settings.md`, `limitations.md`, `warning_tiers.md`). The workspace itself may be the corpus, or it may contain one (e.g., `<workspace>/<guide-folder>/`). If multiple corpora are present, ask which one.
 2. **Read the corpus root files.** `CLAUDE.md` (per-game harness rules), `CHECKPOINT.md` (player position, dial settings, open threads), `persona.md` (cast names + voice rules -- the game-specific half).
 3. **Read the manifest and run the version check.** Read `nav/architecture.md` and look for a `## Hintforge manifest` section. The manifest contains two lines this skill cares about:
    - `corpus-core-version: <integer>` -- compare against `MIN_SUPPORTED_CORE` and `MAX_SUPPORTED_CORE` declared below in this SKILL.md. If outside the range, emit a single warning at session start and proceed (never gate). See "Version mismatch behavior" below for the exact message.

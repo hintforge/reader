@@ -4,20 +4,16 @@
 
 A runtime AI skill that loads a Hintforge-format game guide from your workspace and answers your in-game questions in the guide's persona voice, on graduated spoiler dials you set at the start. Two dials (enemy 0-5, puzzle 0-3) control how much it volunteers. It reads the guide's files before answering -- never from training data.
 
-> Want to **build** a guide from scratch or update one? Go to [`hintforge`](https://github.com/dtiger1889-ops/hintforge) -- the builder skill that walks you through scaffolding a guide for any published video game.
->
-> [Pre-built guides coming soon.]
-
 ## Get started in 3 steps
 
 1. **Install the skill on your AI runtime.** Pick your runtime:
    - [Claude Code](docs/install/claude-code.md)
    - [Codex (CLI + desktop)](docs/install/codex.md)
    - [OpenClaw](docs/install/openclaw.md)
-2. **Drop a Hintforge-format guide folder into your workspace.** Each guide is a folder with the universal core (`nav/`, `items/`, `sections/`, `_overflow/`, plus `CHECKPOINT.md`, `persona.md`, etc.). The reference guide is [Atomic Heart](https://github.com/dtiger1889-ops/hintforge-atomic-heart) (push coming soon -- ask if you want early access).
+2. **Drop a Hintforge-format guide folder into your workspace.** Each guide is a folder with the universal core (`nav/`, `items/`, `sections/`, `_overflow/`, plus `CHECKPOINT.md`, `persona.md`, etc.).
 3. **Open a session in the guide folder and ask for help.** Try "where was I" or "I'm stuck, where do I go?"
 
-**You'll know it's working when** the reader greets you in the guide's persona voice (NORA, Charles, GLaDOS -- whoever the guide casts) and asks you to confirm your spoiler tiers before answering anything substantive.
+**You'll know it's working when** the reader greets you in the guide's persona voice and asks you to confirm your spoiler tiers before answering anything substantive.
 
 ## What the reader does
 

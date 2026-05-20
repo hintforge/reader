@@ -15,7 +15,3 @@ These are Claude-Code-specific or Cowork-specific notes that don't belong in the
 
 - **Session-scoped, files don't persist locally between sessions.** The reader relies on the guide folder being present at session start; Cowork sessions lose that state between runs.
 - **Tends to hallucinate framework rules** instead of loading the per-folder `CLAUDE.md` and the guide's own files. Cowork isn't the right runtime for sustained reading of a guide; use a persistent Claude Code session instead.
-
-### Browser claude.ai
-
-- Same persistence problem as Cowork without a filesystem connector: files don't persist locally between sessions. Not the right runtime for using a guide over multiple play sessions.

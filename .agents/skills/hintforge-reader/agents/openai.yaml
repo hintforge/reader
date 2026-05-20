@@ -1,0 +1,13 @@
+display_name: Hintforge Reader
+description: Spoiler-controlled hint companion for a video game you're playing. Reads a Hintforge-format guide from your workspace and answers from the guide's files, not training data.
+invocation_phrasing:
+  - "where was I"
+  - "hint for this puzzle"
+  - "I'm stuck"
+  - "what does this enemy do"
+  - "where do I go next"
+invocation_policy: passive
+tools:
+  - read
+  - glob
+  - grep

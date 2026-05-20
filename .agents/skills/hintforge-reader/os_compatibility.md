@@ -1,6 +1,6 @@
 # OS + Bot Compatibility -- Player-Facing
 
-What you need to run a hintforge guide on your machine, and what to expect across OS / AI-bot combinations. For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/dtiger1889-ops/hintforge/blob/split-prep/_builder/os_compatibility.md).
+What you need to run a hintforge guide on your machine, and what to expect across OS / AI-bot combinations. For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/os_compatibility.md).
 
 ## Verified-running setup
 

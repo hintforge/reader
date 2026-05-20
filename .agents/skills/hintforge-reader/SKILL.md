@@ -99,7 +99,7 @@ The full rule set for spoiler discipline, hint ladders, source citations, and th
 
 ## Corpus format reference
 
-If a corpus is missing expected directories or files, or a vector extension behaves unexpectedly, the format contract is documented in the [builder skill's `corpus-format.md`](https://github.com/dtiger1889-ops/hintforge/blob/split-prep/_builder/docs/corpus-format.md). End users do not normally need this; it is a maintainer reference.
+If a corpus is missing expected directories or files, or a vector extension behaves unexpectedly, the format contract is documented in the [builder skill's `corpus-format.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/docs/corpus-format.md). End users do not normally need this; it is a maintainer reference.
 
 ## What this skill does NOT do
 

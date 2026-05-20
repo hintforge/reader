@@ -11,7 +11,7 @@ This is the framework's central axis. The reader controls how much the guide vol
 
 Tiers are set at setup and changed any time with a single instruction. The hint ladder (Lvl 1 nudge → Lvl 2 more → Lvl 3 step-by-step) is request-based on top of the tier. The tier controls the **floor** of automatic delivery; the ladder controls **ceilings on request**.
 
-**Canonical implementation:** the [`warning_tiers.md` template](https://github.com/dtiger1889-ops/hintforge/blob/split-prep/_builder/templates/warning_tiers.md) in the builder skill, instantiated per game. The pattern includes a **breach log** that records when discipline slipped and what changed to prevent recurrence -- that retrospective discipline is what makes the tiers durable in practice rather than aspirational.
+**Canonical implementation:** the [`warning_tiers.md` template](https://github.com/dtiger1889-ops/hintforge/blob/main/templates/warning_tiers.md) in the builder skill, instantiated per game. The pattern includes a **breach log** that records when discipline slipped and what changed to prevent recurrence -- that retrospective discipline is what makes the tiers durable in practice rather than aspirational.
 
 **Why this is principle #1:** every other rule (spoiler-free defaults, hint ladder, persona discipline) only makes sense in service of user agency over information flow. Inverting the fan-wiki "spoil-everything-by-default" model is what hintforge exists to do.
 
@@ -36,7 +36,7 @@ Deliver Lvl 1 first. Escalate only on request. Per-puzzle Lvl 2 / Lvl 3 requests
 
 ## 4. Every claim cites a source
 
-Sources have weight. Live in-game observation > known-good wiki > YouTube comment > Reddit thread > vibes. Every fact links back to where it came from. Use the [`claim_format.md` template](https://github.com/dtiger1889-ops/hintforge/blob/split-prep/_builder/templates/claim_format.md) in the builder skill for the structured form. Claims that survived contradiction (tested, worked) outweigh claims never challenged.
+Sources have weight. Live in-game observation > known-good wiki > YouTube comment > Reddit thread > vibes. Every fact links back to where it came from. Use the [`claim_format.md` template](https://github.com/dtiger1889-ops/hintforge/blob/main/templates/claim_format.md) in the builder skill for the structured form. Claims that survived contradiction (tested, worked) outweigh claims never challenged.
 
 ## 5. Blocked sources are tracked, not abandoned
 
@@ -64,7 +64,7 @@ A fresh session -- local, Cowork, or another contributor -- should be able to re
 
 ## 10. Each fact is structured for aggregation (load-bearing for the future aggregator)
 
-Even when the prose reads naturally, every claim exposes: source, contributor, confidence, last-verified, `enemy-tier`, `puzzle-tier`, `category`. The reader doesn't need to see the metadata; the aggregator will. See the [`claim_format.md` template](https://github.com/dtiger1889-ops/hintforge/blob/split-prep/_builder/templates/claim_format.md) in the builder skill. **Born-structured beats retrofitted-structured** -- once the framework has thousands of claims across games, retrofitting metadata is a nightmare.
+Even when the prose reads naturally, every claim exposes: source, contributor, confidence, last-verified, `enemy-tier`, `puzzle-tier`, `category`. The reader doesn't need to see the metadata; the aggregator will. See the [`claim_format.md` template](https://github.com/dtiger1889-ops/hintforge/blob/main/templates/claim_format.md) in the builder skill. **Born-structured beats retrofitted-structured** -- once the framework has thousands of claims across games, retrofitting metadata is a nightmare.
 
 ## 11. Spoiler discipline must propagate upstream (when distribution lands)
 
@@ -111,7 +111,7 @@ The framework is markdown + a structured-claim convention. **That core is portab
 - **Claude-Code-specific:** `.claude/` hook configs, slash commands, certain skill formats
 - **Cowork-specific:** the SessionStart/PreCompact hook reliance, Telegram dispatch
 
-A Mac/Linux user, or a non-Claude AI bot, should be able to consume the markdown templates directly. OS-specific add-ons need contributor adaptation (TTS-on-macOS, save_watcher path defaults, bot-specific session-start mechanics). See [`os_compatibility.md`](os_compatibility.md) for the player-facing verified-running matrix; the full porting roadmap lives in the [builder skill's `os_compatibility.md`](https://github.com/dtiger1889-ops/hintforge/blob/split-prep/_builder/os_compatibility.md).
+A Mac/Linux user, or a non-Claude AI bot, should be able to consume the markdown templates directly. OS-specific add-ons need contributor adaptation (TTS-on-macOS, save_watcher path defaults, bot-specific session-start mechanics). See [`os_compatibility.md`](os_compatibility.md) for the player-facing verified-running matrix; the full porting roadmap lives in the [builder skill's `os_compatibility.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/os_compatibility.md).
 
 **The ask of any new contributor's environment:** read markdown, write markdown, fetch URLs, run a script. Anything beyond that is optional.
 

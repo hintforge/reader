@@ -38,7 +38,7 @@ A runtime AI skill that loads a Hintforge-format game guide from your workspace 
 
 ## Architecture
 
-This skill is one half of the Hintforge framework. The other half is the [`hintforge`](https://github.com/dtiger1889-ops/hintforge) builder, which authors guides. The two share a corpus format documented at the builder's [`docs/corpus-format.md`](https://github.com/dtiger1889-ops/hintforge/blob/split-prep/_builder/docs/corpus-format.md).
+This skill is one half of the Hintforge framework. The other half is the [`hintforge`](https://github.com/dtiger1889-ops/hintforge) builder, which authors guides. The two share a corpus format documented at the builder's [`docs/corpus-format.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/docs/corpus-format.md).
 
 Game-specific persona voices live in each guide's `persona.md`. The voice-agnostic, game-agnostic discipline (player-pull rule, honest-ambiguity rule, file-first rule) lives in this skill's [`persona_universal.md`](.agents/skills/hintforge-reader/persona_universal.md). The reader reads both: discipline from this skill, cast from the guide.
 

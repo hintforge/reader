@@ -51,7 +51,7 @@ Do not activate for authoring or maintenance intents (those belong to the `hintf
 
 ## Session-start behavior
 
-1. **Find the corpus.** Look at the workspace root for a directory containing the universal core: four directories (`nav/`, `items/`, `sections/`, `_overflow/`) and six files (`CHECKPOINT.md`, `CLAUDE.md`, `controls.md`, `settings.md`, `limitations.md`, `warning_tiers.md`). The workspace itself may be the corpus, or it may contain one (e.g., `<workspace>/<guide-folder>/`). If multiple corpora are present, ask which one.
+1. **Find the corpus.** Look at the workspace root for a directory containing the universal core: four directories (`nav/`, `items/`, `sections/`, `_overflow/`) and six files (`CHECKPOINT.md`, `CLAUDE.md`, `controls.md`, `settings.md`, `limitations.md`, `warning_tiers.md`). At `corpus-core-version: 4` and later, the universal core also includes `achievements.md` at corpus root; older corpora may not have it and the reader treats absence as "no achievement tracking in this corpus" rather than as an error. The workspace itself may be the corpus, or it may contain one (e.g., `<workspace>/<guide-folder>/`). If multiple corpora are present, ask which one.
 2. **Read the corpus root files.** `CLAUDE.md` (per-game harness rules), `CHECKPOINT.md` (player position, dial settings, open threads), `persona.md` (cast names + voice rules -- the game-specific half).
 3. **Read the manifest and run the version check.** Read `nav/architecture.md` and look for a `## Hintforge manifest` section. The manifest contains five lines this skill cares about:
    - `corpus-core-version: <integer>` -- compare against `MIN_SUPPORTED_CORE` and `MAX_SUPPORTED_CORE` declared below in this SKILL.md. If outside the range, emit a single warning at session start and proceed (never gate). See "Version mismatch behavior" below for the exact message.
@@ -69,13 +69,15 @@ Do not activate for authoring or maintenance intents (those belong to the `hintf
 This skill speaks `corpus-core-version` in the range `[MIN_SUPPORTED_CORE, MAX_SUPPORTED_CORE]`:
 
 - `MIN_SUPPORTED_CORE: 1`
-- `MAX_SUPPORTED_CORE: 3`
+- `MAX_SUPPORTED_CORE: 4`
 
 These bound the universal-core contract (the four universal directories, the six universal files, the manifest format itself, and the claim-tag syntax) that this skill knows how to route and parse. New vector extensions or new content within existing files do not bump the version; the universal core's shape is what does. See the corpus format spec linked under "Corpus format reference" below for the bump rule and the version history.
 
 **v2 specifics this reader handles.** v2 added a required `capture-method` field on every claim (value vocabulary `web_fetch | special_export | breezewiki | archive_ph | manual_paste`). This reader parses the field silently when present and does not surface it in persona output -- the field exists for corpus audit, not for in-character recitation. When reading a v1 corpus (warning-eligible per the mismatch behavior below), simply skip `capture-method` lookups; no other v2 behavior is gated on the field.
 
 **v3 specifics this reader handles.** v3 added three required manifest fields: `game-version` (freeform string), `game-version-platform` (required for every corpus, including single-platform-today games), and `game-version-as-of` (`YYYY-MM-DD`). This reader surfaces all three at session start in the opening preamble as a passive drift-detection prompt (see session-start step 3), caches any player-declared drift in session memory, and prepends a one-line drift warning to subsequent version-sensitive answers when drift is declared. The reader **never updates the manifest** -- it is a build-time snapshot; corpus rev-bumps are a builder-side action. v1 and v2 corpora lacking the game-version-* fields read silently: skip the session-start surface line; no warning fires because v1 and v2 stay inside the supported range.
+
+**v4 specifics this reader handles.** v4 added the universal-core file `achievements.md` at corpus root and four optional claim-level overlay fields (`achievement:`, `achievement-hidden:`, `trigger_type:`, `genre:`). This reader treats `achievements.md` as the first stop for any achievement-class query (player names an achievement, asks "what am I about to miss," asks "did I get the X achievement"); each entry's `vector-binding` field points to the canonical claim home for the full trigger detail. Routing detail lives in [`persona_universal.md`](persona_universal.md) Rule 1 (Routing); the achievement-PoNR lookahead extension lives in Rule 2 (Lookahead warnings). Hidden achievements (`achievement-hidden: yes`) get their heading gated entirely below `progression`-tier (enemy-tier 1); player explicit opt-in ("show me the hidden achievements") unlocks them for the session. v1-v3 corpora lacking `achievements.md` read silently -- the reader treats the file's absence as "no achievement tracking in this corpus" rather than as an error, and the v4 routing rule falls through to normal Rule 1 behavior.
 
 ### Version mismatch behavior
 
@@ -84,7 +86,7 @@ Warn once at session start, then proceed. There is no hard stop. If the corpus v
 - **Corpus newer than the reader** (`corpus-core-version > MAX_SUPPORTED_CORE`): say "Heads up -- this guide was built in a newer Hintforge format than I fully understand. Some lookups may miss. To make this warning go away, update the reader skill."
 - **Corpus older than the reader** (`corpus-core-version < MIN_SUPPORTED_CORE`): say "Heads up -- this guide was built in an older Hintforge format than I expect. Some lookups may miss. To make this warning go away, rebuild this guide with a current builder."
 
-Then continue the session normally. The player decides whether the rough edges are acceptable. v1 and v2 corpora read by this v3-capable reader are **inside** the supported range (`MIN=1`), so no warning fires for the v1→v2 or v2→v3 transitions; the reader simply skips `capture-method` lookups on v1 corpora and skips the game-version session-start surface on v1/v2 corpora.
+Then continue the session normally. The player decides whether the rough edges are acceptable. v1, v2, and v3 corpora read by this v4-capable reader are **inside** the supported range (`MIN=1`), so no warning fires for the v1→v2, v2→v3, or v3→v4 transitions; the reader simply skips `capture-method` lookups on v1 corpora, skips the game-version session-start surface on v1/v2 corpora, and skips achievement-class routing through `achievements.md` on v1-v3 corpora (falling through to normal Rule 1 behavior).
 
 ## Persona discipline
 

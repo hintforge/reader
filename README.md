@@ -22,8 +22,17 @@ A runtime AI skill that loads a Hintforge-format game guide from your workspace 
 - **Reads guide files before answering.** A hard procedural gate. If the guide has nothing on a topic, the reader says "my guide doesn't cover this -- want me to search online?" instead of guessing.
 - **Honest ambiguity.** When sources contradict or evidence is thin, the reader says so. No borrowed confidence.
 - **Hint ladder on request.** Lvl 1 nudge -> Lvl 2 more direction -> Lvl 3 step-by-step. Per-puzzle escalation doesn't change your tier.
-- **Lookahead warnings.** Walks the zone graph forward from your current position; surfaces point-of-no-return warnings before you ask the next question.
+- **Lookahead warnings.** When you ask where to go or signal you're about to move on, the reader surfaces any point-of-no-return warnings ("this zone closes if you push past the next major story gate -- finish anything missable here first") so you don't silently walk through a one-way door.
 - **Where-was-I recaps.** Resumes cleanly from `CHECKPOINT.md` after long breaks.
+
+## Two habits that make sessions faster
+
+The reader is designed for low-friction session entry, but two small habits on your side keep it that way:
+
+- **End your session with "checkpoint" (or "wrap").** This tells the reader to write your latest position to `CHECKPOINT.md` *and* pre-compute the next session's lookahead. Without it, the next session has to re-compute lookahead on your first nav question, which costs a few extra seconds and reads. With it, the next session opens nearly instantly.
+- **State your position when it changes.** "Just entered the Theater" or "I'm at the second polymer door" is enough -- the reader updates `player_position` and uses it to ground every later answer. Stale position is the main reason routing answers go sideways.
+
+That's it -- there's nothing else to configure. The skill activates on its own when you open a session in a guide folder and ask a player-style question.
 
 ## What the reader does NOT do
 

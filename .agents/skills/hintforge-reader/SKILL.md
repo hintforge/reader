@@ -61,8 +61,8 @@ Do not activate for authoring or maintenance intents (those belong to the `hintf
 
    If `nav/architecture.md` is missing the manifest section entirely (current state for pre-Phase-3 corpora), fall back to listing top-level directories in the corpus and treating non-universal-core, non-platform-runtime directories as extensions with unknown semantics. Flag the missing manifest in the session log but do not warn the player. If the manifest is present but the game-version-* fields are absent (v1 or v2 corpus read by a v3-capable reader), skip the version surface line and continue silently -- the player can still mention drift unprompted, and the corpus is honestly inside the supported range.
 4. **Apply spoiler dials.** Read `CHECKPOINT.md` for the player's current `enemy-tier` (0-5) and `puzzle-tier` (0-3) settings. Default to tier 0 / tier 0 if absent. These gate every claim, every file, every answer for the session.
-5. **Resolve player position.** Read the `player_position` block in `CHECKPOINT.md` -- `current_zone`, `last_known_gate`, `confidence`. This drives routing, lookahead, backtrack, and reachability checks.
-6. **Run lookahead.** Walk the zone graph forward N=2 gates from `last_known_gate`. Surface any point-of-no-return warnings before answering the player's first question.
+5. **Resolve player position.** Read the `player_position` block in `CHECKPOINT.md` -- `current_zone`, `last_known_gate`, `confidence`, and the nested `lookahead_cache` if present. This drives routing, backtrack, and reachability checks.
+6. **Do NOT walk the zone graph at session start.** Lookahead is lazy and cached -- PNR warnings surface only on the player's first nav-relevant turn, and the walk itself runs on `checkpoint`/wrap rather than on entry. See "Lookahead caching" below. Session start ends here; answer the player's question.
 
 ## Corpus core version
 
@@ -87,6 +87,54 @@ Warn once at session start, then proceed. There is no hard stop. If the corpus v
 - **Corpus older than the reader** (`corpus-core-version < MIN_SUPPORTED_CORE`): say "Heads up -- this guide was built in an older Hintforge format than I expect. Some lookups may miss. To make this warning go away, rebuild this guide with a current builder."
 
 Then continue the session normally. The player decides whether the rough edges are acceptable. v1, v2, and v3 corpora read by this v4-capable reader are **inside** the supported range (`MIN=1`), so no warning fires for the v1→v2, v2→v3, or v3→v4 transitions; the reader simply skips `capture-method` lookups on v1 corpora, skips the game-version session-start surface on v1/v2 corpora, and skips achievement-class routing through `achievements.md` on v1-v3 corpora (falling through to normal Rule 1 behavior).
+
+## Lookahead caching
+
+Lookahead is the most expensive part of session start if computed eagerly: it walks the zone graph forward N gates from `last_known_gate`, which can pull in several `nav/<zone>.md` files before the player has asked anything. To stop that cost from landing on every session opener (including short check-ins where the player never asks a nav question), lookahead is **lazy and cached**.
+
+### Where the cache lives
+
+In `CHECKPOINT.md`, nested inside the `player_position` block:
+
+```yaml
+player_position:
+  current_zone: ...
+  last_known_gate: ...
+  ...
+  lookahead_cache:
+    computed_at_position: <gate-name>   # snapshot of last_known_gate when cache was built
+    computed_at: YYYY-MM-DD             # date of the wrap that refreshed this
+    next_gates: [...]                   # gates within N forward steps
+    pnr_warnings: ["<spoiler-safe one-line warning>", ...]
+    notes: ""                           # optional author/maintainer context
+```
+
+The cache is **fresh** when `lookahead_cache.computed_at_position == player_position.last_known_gate`. If the player has progressed past the cached gate (or the block is absent / empty), it is **stale**.
+
+### When the walk runs
+
+- **Session start:** never. The cache is read from CHECKPOINT (free -- you already loaded the file in step 2) but not recomputed.
+- **First nav-relevant turn:** if the cache is fresh, surface its `pnr_warnings`. If stale or absent, walk the zone graph forward N gates from `last_known_gate`, surface the warnings, and hold the result in session memory for the rest of the session.
+- **`checkpoint` / wrap (player says "checkpoint", "wrap", "save progress", or session is about to compact):** walk the zone graph forward N gates, write the result into `lookahead_cache`, bump `computed_at_position` and `computed_at`, then write CHECKPOINT. This is the only place the cache is mutated in normal play. The cost lands at the end of a session where it amortizes against the whole session's turns, not at the start where it taxes every opener.
+
+### What counts as a nav-relevant turn
+
+PNR warnings surface when the player:
+- Asks where to go, what to do next, or names a destination ("how do I get to X?", "where should I head?", "what's next?")
+- Signals movement or imminent progression ("heading to X", "just finished Y", "about to enter Z")
+
+PNR warnings do **not** surface when the player asks about:
+- Items, weapons, enemies, puzzles, lore, controls, or any other non-spatial topic
+- Corpus maintenance ("log this POI", "fix this entry", "what does the file say about X")
+
+### Spoiler tier interaction
+
+PNR warnings fire **regardless of spoiler tier** when the trigger conditions above are met -- they are a consent floor, not a tactical reveal. The framework's job is to ensure the player never silently walks through a one-way door. Tier modulates the **detail** of the warning, not whether it fires:
+
+- Low tier: "next gate is one-way -- finish anything missable in this zone first."
+- High tier: name the gate, the locked content classes, and approximate impact.
+
+Phrasing stays spoiler-safe per `persona_universal.md` -- describe what becomes inaccessible, never name the upcoming location or story beat that causes the closure.
 
 ## Persona discipline
 

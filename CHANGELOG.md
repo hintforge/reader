@@ -4,6 +4,22 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Lookahead lazy + cached -- defer zone-graph walk from session start to nav-relevant turn / wrap (no corpus-version bump)
+
+**Reader changes.**
+
+- `.agents/skills/hintforge-reader/SKILL.md` -- session-start step 5 now also reads the nested `lookahead_cache` block from `CHECKPOINT.md` alongside `player_position` (free; same Read). Step 6 rewritten: **do NOT walk the zone graph at session start.** New "Lookahead caching" section documents the cache shape (`computed_at_position`, `computed_at`, `next_gates`, `pnr_warnings`, `notes`), the freshness rule (fresh when `computed_at_position == last_known_gate`), when the walk runs (session start = never; first nav-relevant turn = use cache if fresh, else compute on demand and hold in session memory; `checkpoint`/wrap = refresh the cache and write back to CHECKPOINT), the definition of nav-relevant (nav-class question, destination naming, or movement signal -- not item / enemy / puzzle / lore / corpus-maintenance turns), and the PNR-fires-regardless-of-spoiler-tier rule as a consent floor (tier modulates the *detail* of the warning, not whether it fires).
+- `.agents/skills/hintforge-reader/persona_universal.md` -- Rule 2 (Lookahead warnings) rewritten to match: lazy on nav-relevant turn, cache-aware, walk amortized to `checkpoint`/wrap. The v4 achievement-PoNR extension inherits the same lazy-cached trigger.
+- `README.md` -- "Lookahead warnings" capability bullet updated to describe on-demand surfacing rather than session-start volunteering. New "Two habits that make sessions faster" section: end sessions with "checkpoint" so wrap pre-computes the next session's lookahead; state position when it changes so routing stays grounded.
+
+**Reasoning.**
+
+- **Why lazy.** Eager session-start lookahead reads `nav/architecture.md` plus N zone files before the player has asked anything. Observation-log evidence from a real playtest (a 5-minute check-in where the player's first message was *"what the fuck are you reading, let's go"*) shows the orientation cost is highly visible on short sessions even though it amortizes invisibly on long ones. Most sessions open with an item / enemy / puzzle / lookup question; deferring the walk to nav-relevant turns means non-nav sessions never pay the cost.
+- **Why cached, not just lazy.** Pure-lazy means the first nav-relevant turn pays the full walk cost. Caching at `checkpoint`/wrap moves that cost to the end of the previous session where it amortizes against the whole session's turns, so the next session's first nav turn is also fast.
+- **Why PNR fires regardless of tier.** PNR warnings are a consent floor, not a tactical reveal. Silently letting a tier-0 player walk through a one-way door is the worse failure mode -- the tier dial is about how much *tactical* spoiler the player wants, not whether they want to be told about irrevocable decisions. Tier modulates the *detail* of the warning (low: "next gate is one-way -- finish anything missable here first"; high: "next gate is one-way and locks zone X, side-quest Y, dialogue Z") rather than whether it fires.
+
+**Compatibility.** Works against all supported corpus versions (v1-v4). CHECKPOINTs that lack the `lookahead_cache` block read normally -- the reader treats absence as "stale, recompute on first nav-relevant turn." The optimization is opt-in per corpus: maintainers who want fast session entry on an existing guide add the empty block under `player_position`, then the next `checkpoint`/wrap populates it. New guides scaffolded by a v4-or-later builder carry the block from creation (see the builder CHANGELOG's matching entry). No corpus-core-version bump because the CHECKPOINT shape is not part of the corpus-core contract.
+
 ### `MAX_SUPPORTED_CORE: 3 → 4` -- handle v4 corpora; route achievement-class queries through `achievements.md`; extend Rule 2 lookahead for achievement PoNRs
 
 **Reader changes.**

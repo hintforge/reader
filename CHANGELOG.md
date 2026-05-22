@@ -20,6 +20,31 @@ All notable, user-visible changes to the hintforge reader land here.
 
 **Compatibility.** Works against all supported corpus versions (v1-v4). CHECKPOINTs that lack the `lookahead_cache` block read normally -- the reader treats absence as "stale, recompute on first nav-relevant turn." The optimization is opt-in per corpus: maintainers who want fast session entry on an existing guide add the empty block under `player_position`, then the next `checkpoint`/wrap populates it. New guides scaffolded by a v4-or-later builder carry the block from creation (see the builder CHANGELOG's matching entry). No corpus-core-version bump because the CHECKPOINT shape is not part of the corpus-core contract.
 
+### `MAX_SUPPORTED_CORE: 4 → 5` -- handle v5 corpora; route entity-class queries through `<class>/<entity-id>.md`; named-hostile-NPC priority rule
+
+**Reader changes.**
+
+- `.agents/skills/hintforge-reader/SKILL.md` -- `MAX_SUPPORTED_CORE` bumped from `4` to `5`. `MIN_SUPPORTED_CORE` remains `1`; this reader handles v1, v2, v3, v4, and v5 corpora without warning. New "v5 specifics this reader handles" paragraph added below the v4 specifics block, covering: (a) the three new claim-level overlay fields (`entity:`, `entity-hidden:`, `entity-status:`); (b) the per-class aggregation contract (`<class>/<entity-id>.md` files built under `npcs/`, `factions/`, `crew/`, and `reputation/` from entity-tagged claims); (c) the named-hostile-NPC priority rule (read entity file first, follow back-pointers to `mechanics.md` for combat granularity only on explicit ask); (d) hidden-entity heading gating below `progression`-tier with explicit-opt-in unlock, parallel to hidden achievements; (e) the `enemies/` retirement and how the reader continues to read unmigrated v4 corpora that still have `enemies/` folders normally. Version-mismatch behavior text updated to include v4 in the inside-range list and to note skipping entity-class routing on v1-v4 corpora.
+- `.agents/skills/hintforge-reader/persona_universal.md` -- Rule 1 (Routing) extended with the entity-class routing rule, the named-hostile-NPC priority rule, and the hidden-entity tier-gating rule, parallel to the existing achievement-class routing clause. Falls through to normal Rule 1 behavior when the relevant `<class>/<entity-id>.md` is absent or at scaffold with the honest empty-statement.
+
+**Reasoning.**
+
+- **Why entity files take routing priority over per-axis files.** Entity-shaped queries ("tell me about <name>", "how does <faction> feel about me", "what's <NPC>'s phase 2") express an entity-centric mental model the player carries across sessions. Answering by walking five per-axis files (nav, item, mechanic, missable, achievement) and synthesizing produces inconsistent answers, costs context, and pays a query-time synthesis tax every time. The entity file is the synthesized result; routing to it first matches the player's mental model with the corpus's storage shape.
+- **Why named-hostile-NPC priority specifically.** Two destinations carry hostile-NPC content at v5: the entity file (`npcs/<id>.md`, with player-facing synthesis) and `mechanics.md` (with generic-mob combat granularity reachable via the `enemy` vector). Without a priority rule, the reader could open either first; the player-facing synthesis is the better answer for nearly all queries. The back-pointer chain from entity file to mechanics handles the rare case where the player wants the granular combat data.
+- **Why no warning fires for v1-v4 corpora.** v1 through v4 stay inside the supported range (`MIN=1`). The reader simply skips entity-class routing on those versions and falls through to normal Rule 1 behavior. For unmigrated v4 corpora that still carry an `enemies/` folder, the reader reads the folder as a per-zone enemy file collection -- the v4-to-v5 builder migration handles the rename at next ingestion, not the reader.
+
+**Compatibility matrix.**
+
+| Corpus version | Reader behavior |
+|---|---|
+| v1 (`corpus-core-version: 1`) | Read normally; skip `capture-method` lookups; skip game-version session-start surface; no achievement routing; no entity routing. No warning. |
+| v2 (`corpus-core-version: 2`) | Read normally; parse `capture-method` silently; skip game-version session-start surface; no achievement routing; no entity routing. No warning. |
+| v3 (`corpus-core-version: 3`) | Read normally; parse `capture-method` silently; surface game-version manifest fields; no achievement routing; no entity routing. No warning. |
+| v4 (`corpus-core-version: 4`) | Read normally; full v4 behavior (achievement-class routing through `achievements.md`, Rule 2 lookahead extension for unresolved-achievement PoNRs); no entity routing. If a legacy `enemies/` folder is present (pre-v5 migration), read its files as per-zone enemy file collection. No warning. |
+| v5 (`corpus-core-version: 5`) | Read normally; full v5 behavior (entity-class routing through `<class>/<entity-id>.md`, named-hostile-NPC priority rule, hidden-entity heading gating). Class folders `npcs/`, `factions/`, `crew/`, `reputation/` are recognized; legacy `enemies/` folder is not expected and would indicate an incomplete migration. No warning. |
+| v6+ (any future bump) | Read with the "newer Hintforge format than I fully understand" warning at session start. |
+| Pre-manifest corpus (no `## Hintforge manifest` section in `nav/architecture.md`) | Fall back to filesystem listing for vector extensions per SKILL.md "Session-start behavior" step 3. |
+
 ### `MAX_SUPPORTED_CORE: 3 → 4` -- handle v4 corpora; route achievement-class queries through `achievements.md`; extend Rule 2 lookahead for achievement PoNRs
 
 **Reader changes.**

@@ -49,6 +49,46 @@ Game-specific persona voices live in each guide's `persona.md`. The voice-agnost
 
 For the full universal rule set, see [`principles.md`](.agents/skills/hintforge-reader/principles.md).
 
+## Maintaining your guide
+
+Your guide corpus was built using the hintforge builder. This section describes how to keep it current as the game patches, DLC ships, or the reader framework updates. Maintenance operations run in the builder, not the reader. See the [hintforge builder repo](https://github.com/dtiger1889-ops/hintforge) for the full builder install.
+
+**Model for all maintenance operations: Sonnet-class, extended thinking off.** Doctor, stitch, zipper, and ingestion are all structural. Confirm your model before starting.
+
+### After a game patch
+
+Patches can change stat values, fix or break mechanics, alter drop rates, or rename items. Claims in the corpus that reference patched content become stale without any visible signal. Doctor's Branch B handles this:
+
+Trigger: `run doctor` in a fresh session inside the game folder, then tell it a patch shipped and give it the patch notes or patch version. Doctor reads `architecture.md` for the current game-version manifest, flags claims that reference content the patch notes touch, and produces a repair plan before changing anything. You confirm the plan before repairs run.
+
+If the patch is large, doctor may invoke the reddit sweep with a scope-query to pull post-patch community findings. That sweep runs in its own subsequent session.
+
+### After a DLC ships
+
+When a DLC ships, run the builder's doctor procedure to scaffold DLC coverage, then resume play in the reader once the corpus is updated.
+
+### Filling coverage gaps
+
+When the reader returns "I don't have reliable data on that" for something that should be in the corpus, it usually means a gap in P2 coverage, a stitch failure that left a claim unresolved, or a P3 dispute that landed as unresolved rather than settled. Doctor's Branch C handles targeted repair:
+
+Trigger: `run doctor`, describe the gap ("the reader can't answer questions about the second boss's loot table"). Doctor reads the relevant corpus files, diagnoses whether the gap is a missing claim, a broken cross-reference, or an unresolved dispute, and either repairs it directly or generates a targeted research brief for a narrow handoff sweep.
+
+Small gaps can often be filled without a full deep-research handoff: tell doctor what you know and it will write the claim directly with appropriate source metadata and confidence flags.
+
+### After a reader (hintforge-reader) update
+
+Reader updates occasionally change how the corpus is interpreted: new dial behavior, new warning tiers, updated persona rules. These changes do not invalidate the corpus unless the `corpus-core-version` increments.
+
+`corpus-core-version` is a single integer in `architecture.md`. The reader declares `MIN_SUPPORTED_CORE` and `MAX_SUPPORTED_CORE`. If your corpus version falls outside the reader's supported range, the reader will warn you at session start and describe what changed. It will not hard-stop; it will proceed and behave as well as it can under the mismatch.
+
+To bring a corpus up to a new version, run `run doctor` and tell it the corpus format migrated to version N. Doctor reads the migration notes for that version bump and applies the required structural changes. Migration notes for each version increment are in `CHANGELOG.md`.
+
+Reader-only updates (persona changes, dial behavior changes, warning-tier changes) that do not bump `corpus-core-version` require no corpus action. Update the reader skill and resume play.
+
+### Periodic check-ins
+
+Even without a patch or DLC, a corpus built from a snapshot of web sources drifts over time as wikis correct errors and community knowledge accumulates. There is no required maintenance cadence; the framework does not nag. When the reader starts returning answers that feel wrong or incomplete, that is the signal to run a targeted doctor pass or a narrow reddit sweep.
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for issue-routing guidance (reader-side vs. builder-side bugs).

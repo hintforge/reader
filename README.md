@@ -23,6 +23,8 @@ Per-runtime details in [`docs/install/`](docs/install/).
 
 **You'll know it's working when** the reader greets you in the guide's persona voice and asks you to confirm your spoiler tiers before answering anything substantive.
 
+> **Model recommendation.** Tested and verified on mid-tier models (Sonnet-class) with extended thinking off. Higher-tier models (Opus-class) work too -- the persona voice tends to sound more distinctive and the answers more nuanced -- but they may be "too helpful," volunteering information that brushes against your spoiler gates, and they cost significantly more per session. Mid-tier is the sweet spot for most players.
+
 ## What the reader does
 
 - **Two-dial spoiler control.** Enemy tier 0-5, puzzle tier 0-3. Set at session start, changeable any time. Defaults to tier 0 / tier 0 (most spoiler-free).

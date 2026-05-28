@@ -4,6 +4,14 @@
 
 A runtime AI skill that loads a Hintforge-format game guide from your workspace and answers your in-game questions in the guide's persona voice, on graduated spoiler dials you set at the start. Two dials (enemy 0-5, puzzle 0-3) control how much it volunteers. It reads the guide's files before answering -- never from training data.
 
+## Install
+
+Paste this into Claude Code, Codex, or OpenClaw:
+
+> Install the hintforge-reader skill from github.com/dtiger1889-ops/hintforge-reader
+
+Per-runtime details in [`docs/install/`](docs/install/).
+
 ## Get started in 3 steps
 
 1. **Install the skill on your AI runtime.** Pick your runtime:

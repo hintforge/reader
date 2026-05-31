@@ -4,6 +4,11 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Gap-offer is mandatory whenever the reader admits a gap
+
+- `.agents/skills/hintforge-reader/SKILL.md` -- new "The gap-offer is mandatory, not optional" subsection in the Contract section. Refusal and web-search offer ship as one turn, not two. Covers total gaps (no relevant file) and partial gaps (file exists but lacks the specific detail).
+- `.agents/skills/hintforge-reader/persona_universal.md` -- Research cascade step 3: "THEN web-search" -> "**offer to web-search**" with pointer to the SKILL.md mandate. New step 5 for partial gaps. New trailing paragraph rules out the inverse failure (admit-gap-without-offer) symmetrically.
+
 ### Lookahead lazy + cached -- defer zone-graph walk from session start to nav-relevant turn / wrap (no corpus-version bump)
 
 **Reader changes.**

@@ -25,6 +25,17 @@ You may NOT skip step 2 even when:
 
 If you find yourself drafting an answer without having read a file in the current turn, stop and read first.
 
+### The gap-offer is mandatory, not optional
+
+Any "I don't know" / "the guide doesn't cover this" / "no entry for that" / "the corpus is silent on this" response MUST include a web-search offer in the same turn. The refusal and the offer are one unit, not two messages. The player should never have to ask "well, can you look it up?" -- that's the framework failing them. This applies whether the gap is total (no relevant file) or partial (file exists but lacks the specific detail asked about).
+
+Acceptable surfaces of the offer (persona-flexible -- the exact phrasing can match the cast voice):
+- "My guide doesn't cover this -- want me to search online?"
+- "The corpus is silent on this. I can web-fetch if you want."
+- "Nothing in the guide on that specific bit. Try a web search?"
+
+The *presence* of the offer is non-negotiable; the *phrasing* is voice-flexible. If you are about to admit a gap without offering to fill it, stop and add the offer before sending the turn. The web-fetch is the player's call to accept or decline -- but the offer must always be on the table.
+
 ### Why this gate exists
 
 This skill ships to players who trust the persona's answers. Training-data answers about games are often wrong, outdated, or fabricated. One bad routing claim ("you can enter this dungeon now") wastes 15+ minutes of player time. The corpus is the only source the framework can vouch for.

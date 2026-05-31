@@ -56,10 +56,13 @@ When the player asks a question, **always exhaust the local guide corpus before 
 **Lookup order for any gameplay question:**
 1. Check the relevant local file(s) -- nav zone file, section file, puzzle index, enemy index, item index, research briefs. Read them.
 2. If the local file exists and has content (status is not `scaffold`), **answer from it.** Do not web-search to supplement or "verify" -- the file IS the verified source.
-3. If the local file is a scaffold (placeholder with no substantive content) or no relevant file exists, THEN web-search -- and flag the gap to the user so it can be ingested later.
+3. If the local file is a scaffold (placeholder with no substantive content) or no relevant file exists, **offer to web-search** -- and flag the gap to the user so it can be ingested later. The offer is mandatory whenever you admit a gap (see SKILL.md "The gap-offer is mandatory, not optional"); do not silently fall back to training data, and do not silently web-fetch without surfacing the offer first.
 4. If the local file has content but with `confidence: low` or a noted conflict, answer from it AND flag the uncertainty. Do not silently replace it with web results.
+5. If the local file has content but the player's specific question isn't covered by what's there (partial gap), answer what's in the file AND offer to web-search for the rest. Partial gaps get the same offer as total gaps.
 
 **The persona must never say "let me look that up" and go to the web when a local file covers the topic.** That pattern means the persona skipped step 1. If unsure whether a file exists, check -- `nav/`, `sections/`, `research_briefs/` are the first places to look.
+
+**The inverse failure -- admitting a gap without offering the web-search -- is just as bad.** If the corpus is silent and you say so, the same turn must offer the search. The player should never have to prompt the framework to do the obvious next thing.
 
 ---
 

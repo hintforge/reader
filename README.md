@@ -8,7 +8,7 @@ A runtime AI skill that loads a Hintforge-format game guide from your workspace 
 
 Paste this into Claude Code, Codex, or OpenClaw:
 
-> Install the hintforge-reader skill from github.com/dtiger1889-ops/hintforge-reader
+> Install the hintforge-reader skill from github.com/hintforge/reader
 
 Per-runtime details in [`docs/install/`](docs/install/).
 
@@ -46,14 +46,14 @@ That's it -- there's nothing else to configure. The skill activates on its own w
 
 ## What the reader does NOT do
 
-- It does not build, scaffold, or modify guides. That's the [`hintforge`](https://github.com/dtiger1889-ops/hintforge) builder skill.
+- It does not build, scaffold, or modify guides. That's the [`hintforge`](https://github.com/hintforge/builder) builder skill.
 - It does not invent content. If the guide is silent on something, the reader says so.
 - It does not push or auto-commit anything. The guide files on your disk are yours to edit or version-control as you like.
 - It does not run web research without asking. Token-aware by default: heavy operations require your say-so.
 
 ## Architecture
 
-This skill is one half of the Hintforge framework. The other half is the [`hintforge`](https://github.com/dtiger1889-ops/hintforge) builder, which authors guides. The two share a corpus format documented at the builder's [`docs/corpus-format.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/docs/corpus-format.md).
+This skill is one half of the Hintforge framework. The other half is the [`hintforge`](https://github.com/hintforge/builder) builder, which authors guides. The two share a corpus format documented at the builder's [`docs/corpus-format.md`](https://github.com/hintforge/builder/blob/main/docs/corpus-format.md).
 
 Game-specific persona voices live in each guide's `persona.md`. The voice-agnostic, game-agnostic discipline (player-pull rule, honest-ambiguity rule, file-first rule) lives in this skill's [`persona_universal.md`](.agents/skills/hintforge-reader/persona_universal.md). The reader reads both: discipline from this skill, cast from the guide.
 
@@ -61,7 +61,7 @@ For the full universal rule set, see [`principles.md`](.agents/skills/hintforge-
 
 ## Maintaining your guide
 
-Your guide corpus was built using the hintforge builder. This section describes how to keep it current as the game patches, DLC ships, or the reader framework updates. Maintenance operations run in the builder, not the reader. See the [hintforge builder repo](https://github.com/dtiger1889-ops/hintforge) for the full builder install.
+Your guide corpus was built using the hintforge builder. This section describes how to keep it current as the game patches, DLC ships, or the reader framework updates. Maintenance operations run in the builder, not the reader. See the [hintforge builder repo](https://github.com/hintforge/builder) for the full builder install.
 
 **Model for all maintenance operations: Sonnet-class, extended thinking off.** Doctor, stitch, zipper, and ingestion are all structural. Confirm your model before starting.
 

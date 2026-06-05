@@ -8,4 +8,4 @@ The skill lives at [`.agents/skills/hintforge-reader/SKILL.md`](.agents/skills/h
 
 ## Companion skill
 
-The corresponding *builder* skill (used to author new guides) is at [`hintforge`](https://github.com/dtiger1889-ops/hintforge). The two skills together replace what was previously a single monolithic framework.
+The corresponding *builder* skill (used to author new guides) is at [`hintforge`](https://github.com/hintforge/builder). The two skills together replace what was previously a single monolithic framework.

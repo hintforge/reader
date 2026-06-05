@@ -1,6 +1,6 @@
 # OS Compatibility -- Player-Facing
 
-What you need to run a hintforge guide on your machine, on a per-OS basis. Runtime-specific caveats (Claude Code, Cowork, browser claude.ai, Codex, OpenClaw) live with each runtime's install doc -- see [`../../../docs/install/`](../../../docs/install/). For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/dtiger1889-ops/hintforge/blob/main/os_compatibility.md).
+What you need to run a hintforge guide on your machine, on a per-OS basis. Runtime-specific caveats (Claude Code, Cowork, browser claude.ai, Codex, OpenClaw) live with each runtime's install doc -- see [`../../../docs/install/`](../../../docs/install/). For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/hintforge/builder/blob/main/os_compatibility.md).
 
 ## Verified-running setup
 

@@ -20,7 +20,7 @@ This is the **reader** repo. Open issues here for:
 - Vector-extension discovery, corpus-core-version warnings
 - Reader-side install / discovery problems on a specific runtime
 
-Open issues at [`hintforge`](https://github.com/hintforge/builder) for:
+Open issues at [`hintforge/builder`](https://github.com/hintforge/builder) for:
 
 - Setup wizard behavior, research-brief generation, ingestion / stitch / zipper
 - Corpus format spec (`docs/corpus-format.md`) ambiguities

@@ -42,18 +42,18 @@ The reader is designed for low-friction session entry, but two small habits on y
 - **End your session with "checkpoint" (or "wrap").** This tells the reader to write your latest position to `CHECKPOINT.md` *and* pre-compute the next session's lookahead. Without it, the next session has to re-compute lookahead on your first nav question, which costs a few extra seconds and reads. With it, the next session opens nearly instantly.
 - **State your position when it changes.** "Just entered the Theater" or "I'm at the second polymer door" is enough -- the reader updates `player_position` and uses it to ground every later answer. Stale position is the main reason routing answers go sideways.
 
-That's it -- there's nothing else to configure. The skill activates on its own when you open a session in a guide folder and ask a player-style question.
+That's it -- there's nothing else to configure. The skill is meant to activate on its own when you open a session in a guide folder and ask a player-style question. If it doesn't greet you in the guide's persona -- or you notice it answering without spoiler discipline -- trigger it manually (on Claude Code, `/hintforge-reader`) and ask your question again.
 
 ## What the reader does NOT do
 
-- It does not build, scaffold, or modify guides. That's the [`hintforge`](https://github.com/hintforge/builder) builder skill.
+- It does not build, scaffold, or modify guides. That's the job of the [`hintforge/builder`](https://github.com/hintforge/builder) skill.
 - It does not invent content. If the guide is silent on something, the reader says so.
 - It does not push or auto-commit anything. The guide files on your disk are yours to edit or version-control as you like.
 - It does not run web research without asking. Token-aware by default: heavy operations require your say-so.
 
 ## Architecture
 
-This skill is one half of the Hintforge framework. The other half is the [`hintforge`](https://github.com/hintforge/builder) builder, which authors guides. The two share a corpus format documented at the builder's [`docs/corpus-format.md`](https://github.com/hintforge/builder/blob/main/docs/corpus-format.md).
+This skill is one half of the Hintforge framework. The other half is the [`hintforge/builder`](https://github.com/hintforge/builder) skill, which authors guides. The two share a corpus format documented at the builder's [`docs/corpus-format.md`](https://github.com/hintforge/builder/blob/main/docs/corpus-format.md).
 
 Game-specific persona voices live in each guide's `persona.md`. The voice-agnostic, game-agnostic discipline (player-pull rule, honest-ambiguity rule, file-first rule) lives in this skill's [`persona_universal.md`](.agents/skills/hintforge-reader/persona_universal.md). The reader reads both: discipline from this skill, cast from the guide.
 
@@ -71,7 +71,7 @@ Patches can change stat values, fix or break mechanics, alter drop rates, or ren
 
 Trigger: `run doctor` in a fresh session inside the game folder, then tell it a patch shipped and give it the patch notes or patch version. Doctor reads `architecture.md` for the current game-version manifest, flags claims that reference content the patch notes touch, and produces a repair plan before changing anything. You confirm the plan before repairs run.
 
-If the patch is large, doctor may invoke the reddit sweep with a scope-query to pull post-patch community findings. That sweep runs in its own subsequent session.
+If the patch is large, doctor may invoke the reddit sweep with a scope-query to pull post-patch community findings. That sweep runs in its own subsequent session. (The reddit sweep needs reddit-mcp-buddy configured with a registered Reddit "script" app -- anonymous Reddit access has been blocked since mid-2026; see the builder's `reddit_sweep.md` for setup.)
 
 ### After a DLC ships
 
@@ -85,7 +85,7 @@ Trigger: `run doctor`, describe the gap ("the reader can't answer questions abou
 
 Small gaps can often be filled without a full deep-research handoff: tell doctor what you know and it will write the claim directly with appropriate source metadata and confidence flags.
 
-### After a reader (hintforge-reader) update
+### After a reader update
 
 Reader updates occasionally change how the corpus is interpreted: new dial behavior, new warning tiers, updated persona rules. These changes do not invalidate the corpus unless the `corpus-core-version` increments.
 

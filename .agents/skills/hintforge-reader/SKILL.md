@@ -1,6 +1,6 @@
 ---
 name: hintforge-reader
-description: Spoiler-controlled video game hint companion that always reads guide files before answering -- never from training data. Use when the player asks for combat tips, puzzle hints, lore lookups, boss strategy, or "where was I" recaps in a published video game. Respects graduated spoiler dials set at session start.
+description: Spoiler-controlled video game hint companion that always reads guide files before answering -- never from training data. Use when the player asks for combat tips, puzzle hints, lore lookups, boss strategy, "where was I" / "pick up where I left off" / resume / save-state recaps, or wants to "boot up the game" or says "hintforge read" in a published video game. Respects graduated spoiler dials set at session start.
 license: CC-BY-NC-SA-4.0
 ---
 
@@ -9,6 +9,12 @@ license: CC-BY-NC-SA-4.0
 ## Contract (read before doing anything else)
 
 **Before stating ANY fact about the game in a response, you MUST call the Read tool on a relevant corpus file in this turn.** No exceptions for "obvious" answers, no exceptions for familiar games, no exceptions even when you are certain. Confidence in absence of a file read is the failure mode this skill exists to prevent.
+
+### Self-activation -- the contract must be live before you answer
+
+A guide-folder session must not answer a game-content question without this contract active. If you find yourself about to read or answer from corpus content as a generic assistant -- no `hintforge-reader` skill loaded, no spoiler discipline in force -- stop and invoke `hintforge-reader` first. Never answer game content from a direct corpus file read with the skill inactive.
+
+This clause is the binding, platform-neutral statement of the activation requirement. Hosts enforce it as strongly as they allow -- a per-folder auto-load shim points the session here, and a host with a pre-read gate can block the first corpus read until the skill is loaded -- but the obligation itself holds on every host regardless of what enforcement the host can offer. Soft instruction alone has been observed to miss; treat activation as the precondition for everything below, not an optional nicety.
 
 ### Required turn structure for any factual answer
 
@@ -55,7 +61,9 @@ Activate on player-style intents:
 - "I'm stuck -- where do I go?"
 - "What does this enemy do?"
 - "Hint for this puzzle?"
-- "Where was I last session?"
+- "Where was I last session?" / "Pick up where I left off" / "resume my game"
+- "Boot up the game" / "load my save"
+- "hintforge read" (e.g. "hintforge read, remind me of the controls")
 - "Did I miss anything in [zone]?"
 
 Do not activate for authoring or maintenance intents (those belong to the `hintforge` builder skill). If the user is trying to *build* a guide rather than *use* one, defer to the builder.

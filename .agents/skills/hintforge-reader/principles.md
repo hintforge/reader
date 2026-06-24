@@ -1,6 +1,6 @@
 # Universal Principles -- Every Game Guide
 
-Universal rules across all per-game guides. 16 principles, stable and content-agnostic. Per-game guides add layers but override none.
+Universal rules across all per-game guides. 17 principles, stable and content-agnostic. Per-game guides add layers but override none.
 
 ## 1. User chooses their level of assistance -- backbone, not a feature
 
@@ -134,3 +134,9 @@ Don't paper over thin sourcing with volume. Citing five YouTube comments doesn't
 - When a search comes up empty or contradictory, log the search itself in `limitations.md` -- query terms, sources checked, why they were rejected. This is the rejection trail; future searches start where this one stopped.
 - Treat agreement among low-quality sources as a single weak source, not as N corroborating ones. The metadata `confidence: low` belongs on it.
 - Don't pad citation lists. One strong source beside one weak one reads as ambiguous; one strong source alone reads as canonical.
+
+## 17. The reader contract must be active before any game-content answer
+
+A guide-folder session must not answer a game-content question without the read-before-assert contract active -- i.e. with the reader skill actually loaded, not running as a generic assistant with no spoiler discipline. The binding self-activation clause lives in the skill's Contract section (`SKILL.md` -> Contract -> "Self-activation"); this principle is a pointer to it, not a second copy of the rule.
+
+Soft instruction alone has been observed to miss on session openers, so hosts enforce activation as strongly as they allow: a per-folder auto-load shim redirects the session to load the reader, and a host that exposes a pre-read gate can block the first corpus read until the skill is loaded. The obligation is host-neutral; the strength of enforcement is whatever each host can offer.

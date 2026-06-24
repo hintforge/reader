@@ -4,6 +4,14 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### `MAX_SUPPORTED_CORE: 5 → 6` -- v6 corpora carry no required `CLAUDE.md`; detect on neutral markers; source harness facts from neutral homes
+
+**Reader changes.**
+
+- `.agents/skills/hintforge-reader/SKILL.md` -- `MAX_SUPPORTED_CORE` bumped 5 → 6. Session-start step 1 (detection) no longer keys on `CLAUDE.md`: it detects on the five always-present marker files (`CHECKPOINT.md`, `controls.md`, `settings.md`, `limitations.md`, `warning_tiers.md`), back-compatible across v1-v6 since those appear in every version. Session-start step 2 reads `CLAUDE.md` only if present (the v1-v5 harness file); on v6 it sources platform from the `## Hintforge manifest` block, persona from `persona.md`, and tiers from `CHECKPOINT.md` instead. New "v6 specifics this reader handles" paragraph; the version-mismatch enumeration is extended through v5.
+
+**Compatibility.** v1-v5 corpora are unaffected -- the reader still reads a present `CLAUDE.md` as the harness file on those versions (`MIN_SUPPORTED_CORE: 1`). v6 corpora (built by builder v70+) carry no required `CLAUDE.md`; any `CLAUDE.md` / `AGENTS.md` present is an optional host shim the reader does not read as corpus data. See the builder CHANGELOG's matching `corpus-core-version: 6` entry for the format change and the doctor migration path.
+
 ### Gap-offer is mandatory whenever the reader admits a gap
 
 - `.agents/skills/hintforge-reader/SKILL.md` -- new "The gap-offer is mandatory, not optional" subsection in the Contract section. Refusal and web-search offer ship as one turn, not two. Covers total gaps (no relevant file) and partial gaps (file exists but lacks the specific detail).

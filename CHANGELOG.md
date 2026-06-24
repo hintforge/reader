@@ -4,6 +4,16 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Self-activation clause + broadened activation triggers -- the reader must be loaded before answering game content
+
+**Reader changes.**
+
+- `.agents/skills/hintforge-reader/SKILL.md` -- new "Self-activation" subsection in the Contract section. A guide-folder session must not answer a game-content question without the reader contract active; if it is about to read or answer from corpus content as a generic assistant with the skill inactive, it stops and invokes `hintforge-reader` first. This is the binding, platform-neutral statement of the activation requirement that per-platform enforcement (per-folder auto-load shims, and on hosts with a pre-read gate, a block on the first corpus read) points back to.
+- `.agents/skills/hintforge-reader/SKILL.md` -- `description` and the Activation intent list broadened to cover resume / save-state / "pick up where I left off" / "boot up the game" / "load my save" / "hintforge read" openers. These previously failed to match the description reliably, so a resume-style opener could land in a session where the skill never activated.
+- `.agents/skills/hintforge-reader/principles.md` -- new Principle 17, a pointer to the Contract self-activation clause (no unique authority; the binding rule stays single-sourced in `SKILL.md`).
+
+**Compatibility.** No corpus-format change; v1-v6 corpora are unaffected. This tightens *activation* (whether the skill loads at all), not runtime routing, dials, persona, or lookahead.
+
 ### `MAX_SUPPORTED_CORE: 5 → 6` -- v6 corpora carry no required `CLAUDE.md`; detect on neutral markers; source harness facts from neutral homes
 
 **Reader changes.**

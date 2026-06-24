@@ -18,7 +18,7 @@ Already installed? Paste this to get the latest version:
 
 > Update the hintforge-reader skill from github.com/hintforge/reader
 
-Your AI does the fetching -- no terminal, no manual download. After updating, just resume play; your existing guides keep working as-is. (If an update changes the guide format, the reader flags it at session start and a `run doctor` pass brings a guide up to date -- see "Maintaining your guide" below.)
+After updating, just resume play; your existing guides keep working as-is. (If an update changes the guide format, the reader flags it at session start and a `run doctor` pass brings a guide up to date -- see "Maintaining your guide" below.)
 
 ## Get started in 3 steps
 

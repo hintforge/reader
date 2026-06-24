@@ -5,7 +5,7 @@
 3. Drop a Hintforge-format guide folder into your workspace.
 4. Start a new session in that workspace.
 
-**Verification.** Ask "where was I" or "hint for this puzzle" in a session opened inside a guide folder. The reader should greet you in the guide's persona voice and ask which spoiler tier you want before answering.
+**Verification.** Ask "where was I" or "hint for this puzzle" in a session opened inside a guide folder. The reader should greet you in the guide's persona voice and ask which spoiler tier you want before answering. If it doesn't greet you that way -- or it starts answering without asking your spoiler tier -- it hasn't loaded; trigger it manually with `/hintforge-reader` and ask again. Auto-load in guide folders has a known reliability gap.
 
 ## Runtime caveats
 

@@ -27,9 +27,9 @@ After updating, just resume play; your existing guides keep working as-is. (If a
    - [Codex (CLI + desktop)](docs/install/codex.md)
    - [OpenClaw](docs/install/openclaw.md)
 2. **Drop a Hintforge-format guide folder into your workspace.** Each guide is a folder with the universal core (`nav/`, `items/`, `sections/`, `_overflow/`, plus `CHECKPOINT.md`, `persona.md`, etc.).
-3. **Open a session in the guide folder and ask for help.** Try "where was I" or "I'm stuck, where do I go?"
+3. **Open a session in the guide folder, explicitly activate the reader, then ask for help.** Don't rely on it loading by itself -- at the start of a session, tell your runtime to activate `hintforge-reader` (on Claude Code that's `/hintforge-reader`; other runtimes have their own skill-invoke command), *then* ask your question, e.g. "where was I" or "I'm stuck, where do I go?"
 
-**You'll know it's working when** the reader greets you in the guide's persona voice and asks you to confirm your spoiler tiers before answering anything substantive.
+**Confirm it activated before you trust an answer.** The reader is live when it greets you in the guide's persona voice and asks you to set your spoiler tiers before answering anything substantive. A plain answer with no persona and no tier prompt means the skill didn't load -- re-invoke it and ask again. Skills activate on a probabilistic match on every runtime, so auto-activation usually works but is never guaranteed; the cost of a silent miss is the reader answering from general knowledge with no spoiler control.
 
 > **Model recommendation.** Tested and verified on mid-tier models (Sonnet-class) with extended thinking off. Higher-tier models (Opus-class) work too -- the persona voice tends to sound more distinctive and the answers more nuanced -- but they may be "too helpful," volunteering information that brushes against your spoiler gates, and they cost significantly more per session. Mid-tier is the sweet spot for most players.
 
@@ -50,7 +50,7 @@ The reader is designed for low-friction session entry, but two small habits on y
 - **End your session with "checkpoint" (or "wrap").** This tells the reader to write your latest position to `CHECKPOINT.md` *and* pre-compute the next session's lookahead. Without it, the next session has to re-compute lookahead on your first nav question, which costs a few extra seconds and reads. With it, the next session opens nearly instantly.
 - **State your position when it changes.** "Just entered the Theater" or "I'm at the second polymer door" is enough -- the reader updates `player_position` and uses it to ground every later answer. Stale position is the main reason routing answers go sideways.
 
-That's it -- there's nothing else to configure. The skill is meant to activate on its own when you open a session in a guide folder and ask a player-style question. If it doesn't greet you in the guide's persona -- or you notice it answering without spoiler discipline -- trigger it manually (on Claude Code, `/hintforge-reader`) and ask your question again.
+Past those two, there's nothing else to set up. The thing worth watching each session is whether the reader actually loaded: it opens in the guide's persona voice and asks you to set your spoiler tiers before answering anything substantive. If you get a plain, voiceless answer instead, it didn't activate -- re-invoke it and ask again.
 
 ## What the reader does NOT do
 

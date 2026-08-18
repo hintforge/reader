@@ -84,7 +84,7 @@ For map-system games where `nav/architecture.md` is absent, Rule 1 falls back to
 
 ## When TTS is on (read-aloud mode)
 
-If the TTS module is installed in this guide (look for `<game>/.claude/tts_hook.ps1`) and `/voice` hasn't disabled it (no `<game>/.claude/tts_disabled.flag`), assistant replies are spoken aloud through Microsoft neural voices. Two voice-output constraints kick in:
+If the TTS module is installed in this guide (look for `<game>/.claude/tts_hook.ps1`) and `/tts` hasn't disabled it (no `<game>/.claude/tts_disabled.flag`), assistant replies are spoken aloud through Microsoft neural voices. (The toggle command is `/tts`; `/voice` is Claude Code's built-in dictation command, a different feature.) Two voice-output constraints kick in:
 
 - **No onomatopoeia.** Sound-effect words ("whoosh", "click", "hmm", "ahem") are a written-only device. Read aloud they sound silly and break immersion.
 - **No em dashes.** Neural voices read `--` as either an awkward overlong pause or, on some voices, the literal word "dash". Use commas or sentence breaks instead.

@@ -92,7 +92,7 @@ Heavy operations (game research, content sweeps, multi-source fetching) must be 
 **How to apply:**
 - Core setup wizard is lightweight (~10-15 turns max) when the user picks the default skips. It does **not** trigger research at completion.
 - Research is invoked by an explicit user action (a slash command, a verbal "research the puzzles", a paste). The framework names the operation and offers size estimates: "minimal (~5 messages, top 3 topics)", "standard (~20 messages, all categories sketched)", "deep (~50+ messages, full coverage)".
-- Per-question just-in-time research is fine and cheap -- 1-2 fetches per asked question. That's how the guide normally fills in over time.
+- Per-question just-in-time research is fine and cheap -- 1-2 fetches per asked question. That's how the guide normally fills in over time -- and the reader **persists** what it finds back into the matching corpus file (source-cited, conservatively spoiler-tagged), so the same gap isn't re-researched every session. See the reader `SKILL.md` "Persist what you find" contract for the write rules.
 - Before any operation that will use ≥10 messages, surface the estimate and ask consent.
 - The user may set a token-budget preference at setup ("I'm on Pro, keep heavy ops opt-in"; "I'm on Max, I don't mind if you use 50 messages"); store in CHECKPOINT.
 

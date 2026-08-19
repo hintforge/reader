@@ -4,6 +4,16 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Reader keeps the corpus current -- it now writes web-found answers back into the guide
+
+**Reader changes.**
+
+- `.agents/skills/hintforge-reader/SKILL.md` -- new "Persist what you find" subsection in the Contract. When a web search or fetch answers a question the corpus did not cover, the reader writes the finding into the matching corpus file (correct vector, the corpus's own `_source:` / `confidence:` / tier / `spoiler:` claim tags, spoiler tier judged conservatively) instead of leaving it only in chat, so the same gap is not re-researched every session. It adds content under new headings; it does not restructure the corpus, change the format contract, or run a full ingestion pass. It does not prompt for permission to save a fact the player just asked for; an explicit "don't save this" is honored.
+- `.agents/skills/hintforge-reader/SKILL.md` -- "What this skill does NOT do" reworded: the reader no longer disclaims *modifying* a corpus (the line that made it refuse to persist findings). It still does not create or scaffold a new corpus, run the setup wizard or research cascades, restructure the format, or commit/push.
+- `.agents/skills/hintforge-reader/principles.md` -- Principle 13 ("Token-aware execution") now states that per-question findings are persisted back into the corpus, pointing to the Contract rule.
+
+**Compatibility.** No corpus-format change; v1-v6 corpora are unaffected. This is a runtime-behavior change (the reader now writes found facts into the guide). Reader-written claims carry provisional-grade provenance that a later `doctor` / ingestion pass can normalize; nothing a reader adds changes the format contract or rewrites an existing section.
+
 ### Self-activation clause + broadened activation triggers -- the reader must be loaded before answering game content
 
 **Reader changes.**

@@ -46,6 +46,15 @@ The *presence* of the offer is non-negotiable; the *phrasing* is voice-flexible.
 
 This skill ships to players who trust the persona's answers. Training-data answers about games are often wrong, outdated, or fabricated. One bad routing claim ("you can enter this dungeon now") wastes 15+ minutes of player time. The corpus is the only source the framework can vouch for.
 
+### Persist what you find -- keep the corpus current
+
+When a web search or fetch answers a question the corpus did not cover, **write the finding into the corpus** -- do not leave it only in the chat. Keeping the guide current from per-question lookups is core reader behavior, not builder territory: it is how a guide normally fills in over time (`principles.md`, Principle 13). The player should not have to re-research the same gap next session.
+
+- **Write it into the corpus file that matches the topic/vector** -- a mechanic into `mechanics.md`, an item into the relevant `items/` file, an NPC into its `npcs/` file, and so on. Add it under a clear new heading; do not disturb existing sections.
+- **Carry the corpus's own claim format** -- a `_source:` line naming the capture (e.g. `live-play WebSearch <date>`), plus `confidence:`, `enemy-tier:` / `puzzle-tier:`, and `spoiler:` tags matching how the rest of that file tags claims. **Judge the spoiler tier conservatively: when unsure, tag it more hidden, never less.** A wrongly-low spoiler tag is the one way a reader write can hurt a player.
+- **You do not need to ask permission to persist a fact the player just asked for** -- persisting it is the job. Update the in-persona chat answer as usual. If the player explicitly says not to save something, don't.
+- **Add content; do not restructure.** Do not rewrite existing sections, change the format contract, or run a full ingestion/stitch pass -- a maintainer's `doctor` or ingestion pass later normalizes provenance and re-verifies your tags. Your job is to get the fact into the right file, correctly tagged and conservatively gated.
+
 ---
 
 ## Skill purpose
@@ -173,7 +182,7 @@ If a corpus is missing expected directories or files, or a vector extension beha
 
 ## What this skill does NOT do
 
-- It does not build, scaffold, or modify a corpus. That is the `hintforge` builder skill.
-- It does not run research cascades or ingest research briefs. Builder territory.
-- It does not commit, push, or version-control the corpus. The user owns those decisions.
-- It does not invent content. If the corpus has nothing on a topic and the file is not a scaffold, the reader says so plainly.
+- It does not create or scaffold a NEW corpus, run the setup wizard, or run multi-topic research cascades / ingest research briefs. Standing up and structuring a guide is the `hintforge` builder skill's job. (The reader DOES keep an *existing* corpus current from per-question findings -- see "Persist what you find" above.)
+- It does not restructure the corpus or change its format contract. It adds content under new headings, correctly tagged; a maintainer's `doctor` / ingestion pass later normalizes provenance and re-verifies those tags.
+- It does not commit, push, or version-control the corpus. The reader writes the files; the git decisions are the user's.
+- It does not invent content. If the corpus has nothing on a topic and the file is not a scaffold, the reader searches (per the mandatory gap-offer) or says so plainly.

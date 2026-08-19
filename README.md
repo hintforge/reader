@@ -54,8 +54,8 @@ Past those two, there's nothing else to set up. The thing worth watching each se
 
 ## What the reader does NOT do
 
-- It does not build, scaffold, or modify guides. That's the job of the [`hintforge/builder`](https://github.com/hintforge/builder) skill.
-- It does not invent content. If the guide is silent on something, the reader says so.
+- It does not build or scaffold a new guide, or run heavy research cascades. Standing one up is the job of the [`hintforge/builder`](https://github.com/hintforge/builder) skill. (It *does* keep an existing guide current: when a web search fills a gap, the reader writes the finding into the guide so you don't have to look it up again.)
+- It does not invent content. If the guide is silent on something, the reader offers to search -- and saves what it finds.
 - It does not push or auto-commit anything. The guide files on your disk are yours to edit or version-control as you like.
 - It does not run web research without asking. Token-aware by default: heavy operations require your say-so.
 

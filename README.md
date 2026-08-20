@@ -31,7 +31,7 @@ After updating, just resume play; your existing guides keep working as-is. (If a
 
 **Confirm it activated before you trust an answer.** The reader is live when it greets you in the guide's persona voice and asks you to set your spoiler tiers before answering anything substantive. A plain answer with no persona and no tier prompt means the skill didn't load -- re-invoke it and ask again. Skills activate on a probabilistic match on every runtime, so auto-activation usually works but is never guaranteed; the cost of a silent miss is the reader answering from general knowledge with no spoiler control.
 
-> **Model recommendation.** Tested and verified on mid-tier models (Sonnet-class) at a modest reasoning-effort level. Higher-tier models (Opus-class), or higher effort, work too -- the persona voice tends to sound more distinctive and the answers more nuanced -- but they may be "too helpful," volunteering information that brushes against your spoiler gates, and they cost significantly more per session. Mid-tier is the sweet spot for most players.
+> **Model recommendation.** Use a Sonnet-class (or equivalent) model at high reasoning effort (Anthropic `effort: high`; Codex/GPT-5 `model_reasoning_effort: high`; the top graduated level otherwise) -- the reader's spoiler-tier judgment, per-question research, and confidence calibration all benefit from full reasoning. Higher-tier models (Opus-class) work too but can be "too helpful," volunteering information that brushes against your spoiler gates, and they cost significantly more per session -- Sonnet-class is the sweet spot for most players.
 
 ## What the reader does
 
@@ -71,7 +71,7 @@ For the full universal rule set, see [`principles.md`](.agents/skills/hintforge-
 
 Your guide corpus was built using the hintforge builder. This section describes how to keep it current as the game patches, DLC ships, or the reader framework updates. Maintenance operations run in the builder, not the reader. See the [hintforge builder repo](https://github.com/hintforge/builder) for the full builder install.
 
-**Model for all maintenance operations: Sonnet-class at modest reasoning effort.** Doctor, stitch, zipper, and ingestion are all structural. Confirm your model and effort setting before starting.
+**Model for all maintenance operations: Sonnet-class at high reasoning effort.** Doctor, stitch, zipper, and ingestion all make judgment calls. Confirm your model and effort setting before starting.
 
 ### After a game patch
 

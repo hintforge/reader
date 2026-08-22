@@ -68,6 +68,8 @@ Every turn where the player asked a decision or a lookup question is a **critica
 
 **Shed from the bottom.** If a turn runs long, drop rank 4 (publish) and even rank 3 (persist) before you ever compress rank 1 (answer). "I ran long, so I'll just publish the card" is exactly backwards.
 
+**Close once.** A full checkpoint close (verify + finish) is a session-END action, not a per-answer one. During live play, edit the corpus and the corpus CHECKPOINT freely as you go, but run the close a single time at the end of the session. Repeated mid-play closes are churn that only create more chances to bury the next answer behind rank-4 admin.
+
 ### Research cascade -- local files first, web search last
 
 When the player asks a question, **always exhaust the local guide corpus before considering web search.** The ingested files (nav/, sections/, research_briefs/, puzzles/, npcs/, factions/, crew/, reputation/, items/, optional_zones/, and the legacy enemies/ folder on unmigrated pre-v5 corpora) are the guide's ground truth -- they were researched, classified, and curated. Web results are unclassified, may contradict the guide, and often contain inaccuracies.

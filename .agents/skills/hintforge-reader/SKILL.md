@@ -6,6 +6,8 @@ license: CC-BY-NC-SA-4.0
 
 # Hintforge reader
 
+**Canonical home: https://github.com/hintforge/reader** (builder: https://github.com/hintforge/builder). When asked to update this skill and the install is a git clone, `git pull` there; when there is no clone or remote, fetch the latest from that URL. This line exists so any install method can locate its upstream without the user supplying a URL.
+
 ## Contract (read before doing anything else)
 
 **Before stating ANY fact about the game in a response, you MUST call the Read tool on a relevant corpus file in this turn.** No exceptions for "obvious" answers, no exceptions for familiar games, no exceptions even when you are certain. Confidence in absence of a file read is the failure mode this skill exists to prevent.

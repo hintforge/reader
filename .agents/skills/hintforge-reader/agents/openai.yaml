@@ -6,6 +6,9 @@ invocation_phrasing:
   - "I'm stuck"
   - "what does this enemy do"
   - "where do I go next"
+  - "boot up the game"
+  - "load my save"
+  - "hintforge read"
 invocation_policy: passive
 tools:
   - read

@@ -70,6 +70,14 @@ Every turn where the player asked a decision or a lookup question is a **critica
 
 **Close once.** A full checkpoint close (verify + finish) is a session-END action, not a per-answer one. During live play, edit the corpus and the corpus CHECKPOINT freely as you go, but run the close a single time at the end of the session. Repeated mid-play closes are churn that only create more chances to bury the next answer behind rank-4 admin.
 
+**Session-goal closeout -- the player writes it, you don't.** The one thing the close adds beyond saving state: ask the player a single question -- what did they want to pick up next, and what does it belong with (a character, a build, a zone, an open thread)? Record their answer close to verbatim in `CHECKPOINT.md` under a `## Session intent` heading, newest line first, in the shape `- YYYY-MM-DD -- <what they want to do next> -- <what it belongs with>`. If the corpus has no such heading yet, add it directly after `## Open threads`.
+
+Three limits keep this lightweight, and the limits are the point of the rule:
+
+- **Ask once, and take "nothing" for an answer.** One question, at the close. If the player skips it or has nothing, write nothing. Never re-ask mid-session.
+- **Never author an intent yourself.** A goal you inferred from the session is not a player goal. Do not synthesise one from the turn history, and do not append "to do next" / "next steps" sections to per-entity files, character or build cards, or published artifacts. Those unsolicited additions are exactly what this rule replaces: they read as busywork, and they crowd out the one line the player actually meant.
+- **Keep at most the three newest lines.** When a fourth arrives, drop the oldest; delete any line the player says is done. This is a note the player left for themselves, not a backlog to groom.
+
 ### Research cascade -- local files first, web search last
 
 When the player asks a question, **always exhaust the local guide corpus before considering web search.** The ingested files (nav/, sections/, research_briefs/, puzzles/, npcs/, factions/, crew/, reputation/, items/, optional_zones/, and the legacy enemies/ folder on unmigrated pre-v5 corpora) are the guide's ground truth -- they were researched, classified, and curated. Web results are unclassified, may contradict the guide, and often contain inaccuracies.

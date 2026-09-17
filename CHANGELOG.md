@@ -4,6 +4,14 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Artifact launcher -- every guide's interactive artifacts in one local window
+
+**New tool.** `.agents/skills/hintforge-reader/tools/artifact-launcher/` -- a local page that scans `<guides-root>/<guide>/artifacts/**/*.html` and lists every artifact across every guide you own, grouped by guide with sub-groups per subfolder, searchable, sortable by name / newest / type. Tabs hold one live frame per open artifact, so switching away from a planner you loaded a save into and back does not reload it. Spoiler class and staleness are read from each guide's `artifacts.json`; an artifact missing from the manifest is still listed rather than hidden. The list collapses to an icon rail (`Ctrl+B`) and a focus mode (`F`) gives the artifact the whole window; pins, tabs and layout persist between launches.
+
+Build it with `build_index.ps1` (Windows PowerShell 5.1 or PowerShell 7), open it with `launch.ps1` in a Chromium app window, and optionally install a desktop shortcut on Windows with `install_shortcut.ps1`. It points itself at your guides by looking for the folder whose children contain `artifacts/`, overridable with `-GuidesRoot` or a `guides_root.txt` beside the script. It reads your files and never writes to them; nothing leaves the machine.
+
+Docs: [`docs/artifact-launcher.md`](docs/artifact-launcher.md). `SKILL.md` gains a short section so the reader can point a player at it, with the caveat that it is player-facing and not part of any answer path.
+
 ### Reader keeps the corpus current -- it now writes web-found answers back into the guide
 
 **Reader changes.**

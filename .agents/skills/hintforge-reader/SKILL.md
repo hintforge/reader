@@ -183,6 +183,12 @@ The game-specific persona cast (PERSONA1 / PERSONA2 voice rules, examples, toggl
 
 The full rule set for spoiler discipline, hint ladders, source citations, and the dial mechanic lives in [`principles.md`](principles.md). Read it at session start; treat it as authoritative for any case the persona rules don't cover.
 
+## Artifact launcher
+
+Interactive artifacts a guide ships (planners, dossiers, browsers) are self-contained HTML files under `<guide>/artifacts/`. This skill ships a local launcher at `tools/artifact-launcher/` that lists every artifact across every guide the player owns and opens them in one window, with tabs that keep each artifact's state. When a player asks where their artifacts are, how to get back to one they used before, or wants several open side by side, point them at `tools/artifact-launcher/launch.ps1` and the setup notes in [`docs/artifact-launcher.md`](https://github.com/hintforge/reader/blob/main/docs/artifact-launcher.md).
+
+It reads the guide folders and never writes to them. It is a player-facing convenience, not part of any answer path: do not run it mid-session, and do not treat its presence as a reason to publish an artifact the player did not ask for.
+
 ## Corpus format reference
 
 If a corpus is missing expected directories or files, or a vector extension behaves unexpectedly, the format contract is documented in the [builder skill's `corpus-format.md`](https://github.com/hintforge/builder/blob/main/docs/corpus-format.md). End users do not normally need this; it is a maintainer reference.

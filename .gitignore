@@ -1,0 +1,4 @@
+# The artifact launcher builds these locally and they contain absolute paths from
+# the machine that built them. They are per-user, never part of the repo.
+.agents/skills/hintforge-reader/tools/artifact-launcher/index.html
+.agents/skills/hintforge-reader/tools/artifact-launcher/guides_root.txt

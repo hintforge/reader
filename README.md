@@ -43,6 +43,16 @@ After updating, just resume play; your existing guides keep working as-is. (If a
 - **Lookahead warnings.** When you ask where to go or signal you're about to move on, the reader surfaces any point-of-no-return warnings ("this zone closes if you push past the next major story gate -- finish anything missable here first") so you don't silently walk through a one-way door.
 - **Where-was-I recaps.** Resumes cleanly from `CHECKPOINT.md` after long breaks.
 
+## Artifact launcher
+
+Guides build interactive artifacts as self-contained HTML files under `<guide>/artifacts/` -- planners, dossiers, browsers. Once you own a few guides those files are scattered across folders. The launcher shipped in `tools/artifact-launcher/` puts them all in one window: grouped by guide, searchable, with tabs that keep each artifact's state so switching away from a planner and back doesn't reload it. Spoiler and staleness flags come from each guide's manifest, so you see them before you open anything.
+
+```
+pwsh -File .agents/skills/hintforge-reader/tools/artifact-launcher/launch.ps1
+```
+
+Full setup, the optional desktop shortcut and the key bindings: [`docs/artifact-launcher.md`](docs/artifact-launcher.md).
+
 ## Two habits that make sessions faster
 
 The reader is designed for low-friction session entry, but two small habits on your side keep it that way:

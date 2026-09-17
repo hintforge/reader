@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hintforge Artifacts</title>
+<!--
+  Template for the local artifact launcher. build_index.ps1 replaces the
+  /*__ARTIFACT_DATA__*/ placeholder with the scanned artifact index and writes
+  index.html next to this file. Opening THIS file directly shows the empty state.
+  Everything is inline on purpose: the page runs from file:// with no server.
+-->
+<style>
+  :root {
+    --bg: #14161a;
+    --bg-raised: #1b1e24;
+    --bg-input: #23272f;
+    --line: #2c313a;
+    --txt: #e6e8ec;
+    --dim: #9aa2b1;
+    --faint: #6b7381;
+    --accent: #e0a458;
+    --accent-dim: #8a6633;
+    --warn: #d9884a;
+    --info: #6f9fd8;
+    --hover: #272c35;
+    --radius: 6px;
+    --side-w: 300px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--txt);
+    font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  button { font: inherit; cursor: pointer; }
+
+  /* ---- top bar ---- */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px; background: var(--bg-raised);
+    border-bottom: 1px solid var(--line); flex: 0 0 auto;
+  }
+  .brand {
+    font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    font-size: 12px; color: var(--accent); white-space: nowrap;
+    background: none; border: none; padding: 0;
+  }
+  .brand:hover { color: var(--txt); }
+  #search {
+    flex: 1; max-width: 420px; background: var(--bg-input); color: var(--txt);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 6px 10px; font: inherit; outline: none;
+  }
+  #search:focus { border-color: var(--accent-dim); }
+  .spacer { flex: 1; }
+  .meta { color: var(--faint); font-size: 12px; white-space: nowrap; }
+  .tool {
+    background: transparent; border: 1px solid transparent; color: var(--dim);
+    border-radius: var(--radius); padding: 4px 9px;
+  }
+  .tool:hover { background: var(--hover); color: var(--txt); border-color: var(--line); }
+
+  /* ---- layout ---- */
+  main { flex: 1; display: flex; min-height: 0; }
+  #sidebar {
+    width: var(--side-w); flex: 0 0 auto; background: var(--bg-raised);
+    border-right: 1px solid var(--line); overflow-y: auto; padding-bottom: 24px;
+  }
+  #stage { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+  /* ---- collapse to a rail, resize, focus ---- */
+  #sidebar { transition: width .12s ease; }
+  .side-hd {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 8px 7px 12px; position: sticky; top: 0; z-index: 3;
+    background: var(--bg-raised); border-bottom: 1px solid var(--line);
+  }
+  .side-hd .lbl {
+    font-size: 11px; font-weight: 600; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--faint); flex: 1;
+  }
+  .side-hd select {
+    flex: 1; min-width: 0; background: var(--bg-input); color: var(--dim);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 3px 6px; font: inherit; font-size: 12px;
+  }
+  .side-hd select:hover { color: var(--txt); }
+  .side-hd select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Second level: the folder an artifact lives in under artifacts/. */
+  .sub-hd {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    padding: 6px 12px 3px 20px; background: transparent; border: none;
+    color: var(--faint); text-align: left;
+    font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .sub-hd:hover { color: var(--dim); }
+  .sub-hd .caret { width: 9px; font-size: 9px; }
+  .sub-hd .n { margin-left: auto; }
+  .row.in-sub { padding-left: 34px; }
+  .icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; flex: 0 0 auto;
+    background: transparent; border: 1px solid transparent; border-radius: var(--radius);
+    color: var(--dim); font-size: 13px; line-height: 1;
+  }
+  .icon-btn:hover { background: var(--hover); color: var(--txt); border-color: var(--line); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Collapsed: a 44px rail, never nothing -- the way back has to stay on screen. */
+  #side-rail { display: none; flex-direction: column; align-items: center; gap: 5px; padding: 7px 0; }
+  body.side-collapsed #sidebar { width: 44px; }
+  body.side-collapsed #side-list { display: none; }
+  body.side-collapsed #side-rail { display: flex; }
+  body.side-collapsed #splitter { display: none; }
+  .rail-btn {
+    width: 30px; height: 30px; border-radius: var(--radius);
+    background: transparent; border: 1px solid transparent; color: var(--dim);
+    font-size: 11px; font-weight: 700; letter-spacing: .02em; position: relative;
+  }
+  .rail-btn:hover { background: var(--hover); color: var(--txt); border-color: var(--line); }
+  .rail-btn.active { color: var(--accent); border-color: var(--accent-dim); }
+  .rail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .rail-btn::after {
+    content: attr(data-label); position: absolute; left: 38px; top: 50%;
+    transform: translateY(-50%); white-space: nowrap;
+    background: var(--bg-input); color: var(--txt); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 3px 8px; font-size: 12px; font-weight: 400;
+    letter-spacing: 0; text-transform: none; opacity: 0; pointer-events: none; z-index: 20;
+  }
+  .rail-btn:hover::after, .rail-btn:focus-visible::after { opacity: 1; }
+  .rail-sep { width: 20px; height: 1px; background: var(--line); margin: 3px 0; }
+
+  #splitter { flex: 0 0 5px; margin-left: -1px; cursor: col-resize; background: transparent; }
+  #splitter:hover, body.dragging #splitter { background: var(--accent-dim); }
+  body.focus header, body.focus #sidebar, body.focus #splitter { display: none; }
+  /* While dragging, this covers the iframe: without it the artifact's own
+     document swallows the mousemove and the divider sticks mid-drag. */
+  #dragmask { position: fixed; inset: 0; z-index: 90; cursor: col-resize; display: none; }
+  body.dragging #dragmask { display: block; }
+  body.dragging iframe { pointer-events: none; }
+
+  /* ---- sidebar ---- */
+  .group-hd {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    padding: 9px 12px 7px; background: transparent; border: none;
+    color: var(--dim); text-align: left;
+    font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+    position: sticky; top: 41px; background: var(--bg-raised); z-index: 1;
+  }
+  .group-hd:hover { color: var(--txt); }
+  .group-hd .caret { color: var(--faint); font-size: 10px; width: 10px; }
+  .group-hd .n { margin-left: auto; color: var(--faint); font-weight: 400; letter-spacing: 0; }
+  .row {
+    display: flex; align-items: baseline; gap: 7px; width: 100%;
+    padding: 5px 12px 5px 26px; background: transparent; border: none;
+    color: var(--txt); text-align: left; line-height: 1.3;
+  }
+  .row:hover { background: var(--hover); }
+  .row.active { background: var(--hover); box-shadow: inset 2px 0 0 var(--accent); }
+  .row .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .k { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .row .pin {
+    color: var(--faint); font-size: 12px; padding: 0 2px; background: none;
+    border: none; opacity: 0; flex: 0 0 auto;
+  }
+  .row:hover .pin, .row .pin.on { opacity: 1; }
+  .row .pin.on { color: var(--accent); }
+  .row .pin:hover { color: var(--accent); }
+  .dot { flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; }
+  .dot.stale { background: var(--warn); }
+  .dot.spoiler { background: var(--info); }
+  .empty-note { padding: 10px 12px; color: var(--faint); font-size: 12px; }
+  .side-foot {
+    padding: 12px; margin-top: 8px; border-top: 1px solid var(--line);
+    color: var(--faint); font-size: 11px; line-height: 1.6;
+  }
+
+  /* ---- pane ---- */
+  /* ---- tabs: one live iframe per open artifact, so switching back keeps its state ---- */
+  #tabstrip {
+    display: none; flex: 0 0 auto; align-items: stretch;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+  }
+  body.has-tabs #tabstrip { display: flex; }
+  .tab {
+    display: flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: 215px;
+    padding: 6px 7px 6px 11px; background: var(--bg-raised); border: none;
+    border-right: 1px solid var(--line); border-top: 2px solid transparent;
+    color: var(--dim); font-size: 12.5px; white-space: nowrap;
+  }
+  .tab:hover { background: var(--hover); color: var(--txt); }
+  .tab.active { background: var(--bg-input); color: var(--txt); border-top-color: var(--accent); }
+  .tab.preview .tt { font-style: italic; }
+  .tab .tt { overflow: hidden; text-overflow: ellipsis; }
+  .tab .x {
+    flex: 0 0 auto; width: 16px; height: 16px; border-radius: 3px; border: none;
+    background: transparent; color: var(--faint); font-size: 13px; line-height: 1;
+    opacity: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .tab:hover .x, .tab.active .x { opacity: 1; }
+  .tab .x:hover { background: var(--line); color: var(--txt); }
+  .tab .dot { width: 5px; height: 5px; border-radius: 50%; flex: 0 0 auto; }
+  .tab-spacer { flex: 1; min-width: 12px; }
+
+  #panes { flex: 1; min-height: 0; display: none; }
+  .pane { flex: 1; min-width: 0; display: none; }
+  .pane.active { display: flex; }
+  body.showing-artifact #panes { display: flex; }
+  body.showing-artifact #home { display: none; }
+
+  .pane-hd {
+    display: none; align-items: center; gap: 10px; flex: 0 0 auto;
+    padding: 7px 12px; background: var(--bg-raised); border-bottom: 1px solid var(--line);
+  }
+  body.showing-artifact .pane-hd { display: flex; }
+  body.focus .pane-hd { display: none; }
+  .pane-hd .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pane-hd .sub { color: var(--faint); font-size: 12px; white-space: nowrap; }
+  .badge {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+    padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--dim);
+    white-space: nowrap;
+  }
+  .badge.stale { color: var(--warn); border-color: var(--accent-dim); }
+  .badge.spoiler { color: var(--info); border-color: #35506e; }
+  iframe { flex: 1; width: 100%; border: none; background: #fff; }
+
+  /* ---- home grid ---- */
+  #home { flex: 1; overflow-y: auto; padding: 22px; }
+  #home h1 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+  #home .lede { color: var(--dim); margin: 0 0 20px; font-size: 13px; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .tile {
+    background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; text-align: left; padding: 0; color: var(--txt); display: flex; flex-direction: column;
+  }
+  .tile:hover { border-color: var(--accent-dim); }
+  .tile img { width: 100%; display: block; background: #0f1114; }
+  .tile .body { padding: 10px 12px; }
+  .tile .name { font-weight: 600; margin-bottom: 2px; }
+  .tile .count { color: var(--faint); font-size: 12px; }
+  .toast {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-input); border: 1px solid var(--line); color: var(--txt);
+    padding: 7px 14px; border-radius: var(--radius); font-size: 13px;
+    opacity: 0; pointer-events: none; transition: opacity .18s;
+  }
+  .toast.show { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .toast { transition: none; }
+    #sidebar { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="brand" id="homeBtn" title="All games (Esc)">Hintforge Artifacts</button>
+  <input id="search" type="search" placeholder="Search artifacts    /" autocomplete="off" spellcheck="false">
+  <span class="spacer"></span>
+  <span class="meta" id="countMeta"></span>
+  <button class="tool" id="focusBtn" title="Hide all chrome around the artifact (F)">Focus</button>
+  <button class="tool" id="openExternal" title="Open the current artifact in its own window">Open in window</button>
+  <button class="tool" id="reloadBtn" title="Reload the current artifact">Reload</button>
+</header>
+
+<main>
+  <nav id="sidebar" aria-label="Artifacts">
+    <div id="side-rail"></div>
+    <div id="side-list"></div>
+  </nav>
+  <div id="splitter" title="Drag to resize; double-click to reset"></div>
+  <section id="stage">
+    <div id="tabstrip" role="tablist" aria-label="Open artifacts"></div>
+    <div class="pane-hd" id="paneHd"></div>
+    <div id="panes"></div>
+    <div id="home">
+      <h1>Local game artifacts</h1>
+      <p class="lede" id="homeLede"></p>
+      <div class="grid" id="homeGrid"></div>
+    </div>
+  </section>
+</main>
+
+<div id="dragmask"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+// build_index.ps1 replaces the whole token `/*__ARTIFACT_DATA__*/null` with the
+// index object. Untouched, this file still parses and shows the empty state.
+var DATA = /*__ARTIFACT_DATA__*/null || { generated: "not built yet", count: 0, games: [] };
+
+/* ---------- storage (file:// can refuse it; never let that break the page) ---------- */
+var KEY = "hintforge.launcher.v1";
+var MIN_W = 170, MAX_W = 620, DEFAULT_W = 300;
+var state = {
+  pins: [], recent: [], collapsed: [], sideW: DEFAULT_W, sideCollapsed: false,
+  sort: "name", tabs: [], activeId: null, previewId: null
+};
+try {
+  var saved = localStorage.getItem(KEY);
+  if (saved) {
+    var parsed = JSON.parse(saved);
+    state.pins = parsed.pins || [];
+    state.recent = parsed.recent || [];
+    state.collapsed = parsed.collapsed || [];
+    state.sideW = parsed.sideW || DEFAULT_W;
+    state.sideCollapsed = !!parsed.sideCollapsed;
+    state.sort = parsed.sort || "name";
+    state.tabs = parsed.tabs || [];
+    state.activeId = parsed.activeId || null;
+  }
+} catch (e) { /* private mode, blocked file storage: run without persistence */ }
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { }
+}
+
+/* ---------- flatten ---------- */
+var ALL = [];
+DATA.games.forEach(function (g) {
+  (g.artifacts || []).forEach(function (a) {
+    a.game = g.name; a.slug = g.slug;
+    ALL.push(a);
+  });
+});
+var BY_ID = {};
+ALL.forEach(function (a) { BY_ID[a.id] = a; });
+
+var current = null;
+var filtered = ALL.slice();
+
+/* ---------- helpers ---------- */
+function el(tag, cls, text) {
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined && text !== null) n.textContent = text;
+  return n;
+}
+function isPinned(id) { return state.pins.indexOf(id) !== -1; }
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { t.classList.remove("show"); }, 1600);
+}
+function matches(a, q) {
+  if (!q) return true;
+  return (a.title + " " + a.game + " " + a.kind + " " + a.rel).toLowerCase().indexOf(q) !== -1;
+}
+
+/* ---------- layout: resizable + collapsible + focus ---------- */
+function clampWidth(w) { return Math.max(MIN_W, Math.min(MAX_W, Math.round(w))); }
+
+function applyLayout() {
+  document.documentElement.style.setProperty("--side-w", state.sideW + "px");
+  document.body.classList.toggle("side-collapsed", !!state.sideCollapsed);
+  var expanded = state.sideCollapsed ? "false" : "true";
+  ["collapseBtn", "expandBtn"].forEach(function (id) {
+    var b = document.getElementById(id);
+    if (b) { b.setAttribute("aria-expanded", expanded); }
+  });
+}
+
+function setSidebar(collapsed, moveFocus) {
+  state.sideCollapsed = !!collapsed;
+  save();
+  renderSidebar();
+  applyLayout();
+  // Keyboard users must land on the control that undoes what just happened,
+  // otherwise focus is left on a button that no longer exists.
+  if (moveFocus) {
+    var next = document.getElementById(state.sideCollapsed ? "expandBtn" : "collapseBtn");
+    if (next) { next.focus(); }
+  }
+}
+
+function initials(name) {
+  var words = name.split(/[^A-Za-z]+/).filter(Boolean);
+  if (words.length >= 2) { return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase(); }
+  return (words[0] || "?").slice(0, 2).toUpperCase();
+}
+
+// Collapsed, the panel becomes a rail rather than nothing: the expand control stays
+// on screen and each game keeps a labelled button, so the list is still navigable.
+function renderRail() {
+  var rail = document.getElementById("side-rail");
+  rail.innerHTML = "";
+
+  var ex = el("button", "icon-btn", "»");
+  ex.id = "expandBtn";
+  ex.title = "Expand the list (Ctrl+B)";
+  ex.setAttribute("aria-label", "Expand the list");
+  ex.setAttribute("aria-controls", "side-list");
+  ex.setAttribute("aria-expanded", "false");
+  ex.addEventListener("click", function () { setSidebar(false, true); });
+  rail.appendChild(ex);
+  rail.appendChild(el("div", "rail-sep"));
+
+  DATA.games.forEach(function (g) {
+    if (!g.artifacts.length) { return; }
+    var b = el("button", "rail-btn", initials(g.name));
+    b.setAttribute("data-label", g.name + " · " + g.artifacts.length);
+    b.setAttribute("aria-label", g.name + ", " + g.artifacts.length + " artifacts");
+    if (current && current.slug === g.slug) { b.classList.add("active"); }
+    b.addEventListener("click", function () { open(g.artifacts[0].id); });
+    rail.appendChild(b);
+  });
+}
+
+function sideHeader() {
+  var hd = el("div", "side-hd");
+
+  var sel = document.createElement("select");
+  sel.id = "sortSel";
+  sel.setAttribute("aria-label", "Sort artifacts");
+  sel.title = "Sort within each group";
+  [["name", "Sort: name"], ["recent", "Sort: newest"], ["kind", "Sort: type"]].forEach(function (o) {
+    var opt = document.createElement("option");
+    opt.value = o[0]; opt.textContent = o[1];
+    if (state.sort === o[0]) { opt.selected = true; }
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", function () {
+    state.sort = sel.value; save(); renderSidebar();
+    document.getElementById("sortSel").focus();
+  });
+  hd.appendChild(sel);
+  var btn = el("button", "icon-btn", "«");
+  btn.id = "collapseBtn";
+  btn.title = "Collapse the list (Ctrl+B)";
+  btn.setAttribute("aria-label", "Collapse the list");
+  btn.setAttribute("aria-controls", "side-list");
+  btn.setAttribute("aria-expanded", "true");
+  btn.addEventListener("click", function () { setSidebar(true, true); });
+  hd.appendChild(btn);
+  return hd;
+}
+
+var preFocusCollapsed = null;
+function setFocus(on) {
+  // Focus hides the top bar as well as the list, so the artifact gets nearly the
+  // whole window. The pane header stays: it is one row tall and it carries the way
+  // back out. On the home grid there is nothing to focus on, so it is a no-op.
+  if (on && !current) { toast("Open an artifact first"); return; }
+  if (on) {
+    preFocusCollapsed = state.sideCollapsed;
+    document.body.classList.add("focus");
+    setSidebar(true);
+  } else {
+    document.body.classList.remove("focus");
+    setSidebar(preFocusCollapsed === null ? false : preFocusCollapsed);
+    preFocusCollapsed = null;
+  }
+  renderTabs();
+  if (current) { renderPaneHeader(); }
+}
+function inFocus() { return document.body.classList.contains("focus"); }
+
+(function wireSplitter() {
+  var splitter = document.getElementById("splitter");
+  var startX = 0, startW = 0;
+
+  function onMove(ev) {
+    state.sideW = clampWidth(startW + (ev.clientX - startX));
+    document.documentElement.style.setProperty("--side-w", state.sideW + "px");
+  }
+  function onUp() {
+    document.body.classList.remove("dragging");
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+    save();
+  }
+  splitter.addEventListener("mousedown", function (ev) {
+    ev.preventDefault();
+    startX = ev.clientX;
+    startW = document.getElementById("sidebar").offsetWidth;
+    document.body.classList.add("dragging");
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  });
+  splitter.addEventListener("dblclick", function () {
+    state.sideW = DEFAULT_W; save(); applyLayout(); toast("List width reset");
+  });
+})();
+
+/* ---------- sidebar ---------- */
+// Rows are recorded in the order they are painted, so keyboard navigation follows
+// what is on screen rather than the underlying index order -- otherwise sorting by
+// newest would send the arrow keys somewhere else entirely.
+var visualOrder = [];
+
+function sortItems(items) {
+  var copy = items.slice();
+  if (state.sort === "recent") {
+    copy.sort(function (x, y) { return (y.modifiedTs || 0) - (x.modifiedTs || 0); });
+  } else if (state.sort === "kind") {
+    copy.sort(function (x, y) {
+      return (x.kind || "").localeCompare(y.kind || "") || x.title.localeCompare(y.title);
+    });
+  } else {
+    copy.sort(function (x, y) { return x.title.localeCompare(y.title); });
+  }
+  return copy;
+}
+
+// Split a game's artifacts by the folder they live in; loose files sort last.
+function groupsOf(items) {
+  var order = [], byKey = {};
+  items.forEach(function (a) {
+    var k = a.group || "";
+    if (!byKey[k]) { byKey[k] = []; order.push(k); }
+    byKey[k].push(a);
+  });
+  order.sort(function (x, y) {
+    if (!x) { return 1; }
+    if (!y) { return -1; }
+    return x.localeCompare(y);
+  });
+  return order.map(function (k) {
+    return { key: k, label: byKey[k][0].groupLabel || "Loose files", items: byKey[k] };
+  });
+}
+
+function toggleCollapsed(key) {
+  var i = state.collapsed.indexOf(key);
+  if (i === -1) { state.collapsed.push(key); } else { state.collapsed.splice(i, 1); }
+  save(); renderSidebar();
+}
+
+function makeRow(a, inSub) {
+  var row = el("button", "row" + (inSub ? " in-sub" : ""));
+  row.dataset.id = a.id;
+  visualOrder.push(a);
+  if (current && current.id === a.id) row.classList.add("active");
+
+  if (a.stale) { row.appendChild(el("span", "dot stale")).title = "Flagged stale in the manifest"; }
+  else if (a.spoiler) { row.appendChild(el("span", "dot spoiler")).title = "Spoiler class: " + a.spoiler; }
+
+  row.appendChild(el("span", "t", a.title));
+  // Under a folder heading, a folder-derived kind is just that heading again.
+  if (a.kind && (a.kindSource === "manifest" || !inSub)) {
+    row.appendChild(el("span", "k", a.kind));
+  }
+
+  var pin = el("button", "pin" + (isPinned(a.id) ? " on" : ""), isPinned(a.id) ? "★" : "☆");
+  pin.title = isPinned(a.id) ? "Unpin" : "Pin to the top";
+  pin.addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    var i = state.pins.indexOf(a.id);
+    if (i === -1) { state.pins.push(a.id); } else { state.pins.splice(i, 1); }
+    save(); renderSidebar();
+  });
+  row.appendChild(pin);
+
+  row.addEventListener("click", function () { open(a.id); });
+  return row;
+}
+
+function makeGroup(label, items, key, opts) {
+  opts = opts || {};
+  var collapsed = state.collapsed.indexOf(key) !== -1;
+
+  var hd = el("button", "group-hd");
+  hd.appendChild(el("span", "caret", collapsed ? "▸" : "▾"));
+  hd.appendChild(el("span", null, label));
+  hd.appendChild(el("span", "n", String(items.length)));
+  hd.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  hd.addEventListener("click", function () { toggleCollapsed(key); });
+
+  var frag = document.createDocumentFragment();
+  frag.appendChild(hd);
+  if (collapsed) { return frag; }
+
+  // Folder subheadings only earn their place when a game actually has more than
+  // one folder; a game whose artifacts all sit together stays a flat list.
+  var subs = opts.subgroups ? groupsOf(items) : [];
+  if (subs.length > 1) {
+    subs.forEach(function (s) {
+      var subKey = key + "//" + s.key;
+      var subCollapsed = state.collapsed.indexOf(subKey) !== -1;
+      var sh = el("button", "sub-hd");
+      sh.appendChild(el("span", "caret", subCollapsed ? "▸" : "▾"));
+      sh.appendChild(el("span", null, s.label));
+      sh.appendChild(el("span", "n", String(s.items.length)));
+      sh.setAttribute("aria-expanded", subCollapsed ? "false" : "true");
+      sh.addEventListener("click", function () { toggleCollapsed(subKey); });
+      frag.appendChild(sh);
+      if (!subCollapsed) {
+        sortItems(s.items).forEach(function (a) { frag.appendChild(makeRow(a, true)); });
+      }
+    });
+    return frag;
+  }
+
+  var rows = opts.nosort ? items : sortItems(items);
+  rows.forEach(function (a) { frag.appendChild(makeRow(a)); });
+  return frag;
+}
+
+function renderSidebar() {
+  var side = document.getElementById("side-list");
+  var q = document.getElementById("search").value.trim().toLowerCase();
+  side.innerHTML = "";
+  visualOrder = [];
+  side.appendChild(sideHeader());
+  renderRail();
+  filtered = ALL.filter(function (a) { return matches(a, q); });
+
+  if (!ALL.length) {
+    side.appendChild(el("div", "empty-note",
+      "No artifacts indexed. Run build_index.ps1 to scan your guides folder."));
+    return;
+  }
+  if (!filtered.length) {
+    side.appendChild(el("div", "empty-note", "Nothing matches " + JSON.stringify(q) + "."));
+    return;
+  }
+
+  var pinned = filtered.filter(function (a) { return isPinned(a.id); });
+  if (pinned.length) side.appendChild(makeGroup("Pinned", pinned, "@pinned"));
+
+  var recent = state.recent
+    .map(function (id) { return BY_ID[id]; })
+    .filter(function (a) { return a && matches(a, q) && !isPinned(a.id); })
+    .slice(0, 6);
+  if (recent.length) side.appendChild(makeGroup("Recent", recent, "@recent", { nosort: true }));
+
+  DATA.games.forEach(function (g) {
+    var items = filtered.filter(function (a) { return a.slug === g.slug; });
+    if (items.length) side.appendChild(makeGroup(g.name, items, g.slug, { subgroups: true }));
+  });
+
+  var foot = el("div", "side-foot");
+  foot.appendChild(el("div", null, DATA.count + " artifacts · " + DATA.games.length + " games"));
+  foot.appendChild(el("div", null, "Indexed " + DATA.generated));
+  foot.appendChild(el("div", null, "/ search · Ctrl+B collapse · F focus · F11 fullscreen"));
+  foot.appendChild(el("div", null, "Tabs: Ctrl+Tab next · Alt+1..9 jump · Alt+W close · middle-click closes"));
+  foot.appendChild(el("div", null, "Arrow keys preview in one tab; clicking a row opens its own."));
+  side.appendChild(foot);
+
+  document.getElementById("countMeta").textContent =
+    q ? filtered.length + " of " + ALL.length : ALL.length + " artifacts";
+}
+
+/* ---------- stage ---------- */
+var homeBuilt = false;
+
+function renderHome() {
+  current = null;
+  state.activeId = null;
+  save();
+  document.body.classList.remove("showing-artifact");
+  buildHome();
+  renderTabs();
+  renderSidebar();
+  document.title = "Hintforge Artifacts";
+}
+
+function buildHome() {
+  if (homeBuilt) { return; }
+  homeBuilt = true;
+  document.getElementById("homeLede").textContent =
+    DATA.count + " self-contained HTML tools across " + DATA.games.length +
+    " guides. Click a game, or search from the bar above.";
+
+  var grid = document.getElementById("homeGrid");
+  DATA.games.forEach(function (g) {
+    var tile = el("button", "tile");
+    if (g.card) {
+      var img = document.createElement("img");
+      img.src = g.card; img.alt = "";
+      img.addEventListener("error", function () { img.remove(); });
+      tile.appendChild(img);
+    }
+    var body = el("div", "body");
+    body.appendChild(el("div", "name", g.name));
+    body.appendChild(el("div", "count", g.artifacts.length +
+      (g.artifacts.length === 1 ? " artifact" : " artifacts") +
+      (g.hasManifest ? "" : " · no manifest")));
+    tile.appendChild(body);
+    tile.addEventListener("click", function () {
+      document.getElementById("search").value = "";
+      state.collapsed = state.collapsed.filter(function (k) { return k !== g.slug; });
+      save(); renderSidebar();
+      if (g.artifacts.length) open(g.artifacts[0].id);
+    });
+    grid.appendChild(tile);
+  });
+}
+
+/* ---------- tabs ----------
+   Every open artifact keeps its own iframe in the DOM; switching tabs only
+   changes which pane is visible. That is the whole point: a dossier you
+   scrolled, or a planner you loaded a save into, is exactly as you left it when
+   you come back to it. Reusing one iframe and swapping its src would reload the
+   document and throw that away. */
+
+function ensurePane(id) {
+  var panes = document.getElementById("panes");
+  var existing = panes.querySelector('[data-id="' + id + '"]');
+  if (existing) { return existing; }
+  var a = BY_ID[id];
+  var pane = el("div", "pane");
+  pane.dataset.id = id;
+  var frame = document.createElement("iframe");
+  frame.src = a.url;
+  frame.title = a.title;
+  pane.appendChild(frame);
+  panes.appendChild(pane);
+  return pane;
+}
+
+function removePane(id) {
+  var p = document.getElementById("panes").querySelector('[data-id="' + id + '"]');
+  if (p) { p.remove(); }
+}
+
+// opts.preview: arrow-key browsing reuses one slot instead of stacking up a tab
+// per keypress. opts.background: open without switching to it.
+function openTab(id, opts) {
+  var a = BY_ID[id];
+  if (!a) { return; }
+  opts = opts || {};
+
+  if (state.tabs.indexOf(id) === -1) {
+    var prev = state.previewId;
+    var pi = prev ? state.tabs.indexOf(prev) : -1;
+    if (opts.preview && pi !== -1) {
+      removePane(prev);
+      state.tabs.splice(pi, 1, id);
+    } else {
+      state.tabs.push(id);
+    }
+    state.previewId = opts.preview ? id : null;
+  } else if (!opts.preview && state.previewId === id) {
+    state.previewId = null;   // clicking a previewed artifact keeps it for good
+  }
+
+  if (opts.background) { save(); renderTabs(); } else { activateTab(id); }
+}
+
+function activateTab(id) {
+  var a = BY_ID[id];
+  if (!a) { return; }
+  current = a;
+  state.activeId = id;
+  state.recent = [id].concat(state.recent.filter(function (r) { return r !== id; })).slice(0, 12);
+  save();
+
+  ensurePane(id);
+  var panes = document.getElementById("panes").children;
+  for (var i = 0; i < panes.length; i++) {
+    panes[i].classList.toggle("active", panes[i].dataset.id === id);
+  }
+  document.body.classList.add("showing-artifact");
+
+  renderPaneHeader();
+  renderTabs();
+  renderSidebar();
+  document.title = a.title + " — Hintforge Artifacts";
+  try { history.replaceState(null, "", "#" + encodeURIComponent(id)); } catch (e) { }
+}
+
+function closeTab(id) {
+  var i = state.tabs.indexOf(id);
+  if (i === -1) { return; }
+  state.tabs.splice(i, 1);
+  removePane(id);
+  if (state.previewId === id) { state.previewId = null; }
+
+  if (state.activeId === id) {
+    var next = state.tabs[i] || state.tabs[i - 1];
+    if (next) { activateTab(next); return; }
+    renderHome();
+    return;
+  }
+  save();
+  renderTabs();
+}
+
+function cycleTab(step) {
+  if (state.tabs.length < 2) { return; }
+  var i = state.tabs.indexOf(state.activeId);
+  i = (i === -1 ? 0 : i + step + state.tabs.length) % state.tabs.length;
+  activateTab(state.tabs[i]);
+}
+
+function renderTabs() {
+  var strip = document.getElementById("tabstrip");
+  strip.innerHTML = "";
+  document.body.classList.toggle("has-tabs", state.tabs.length > 0);
+
+  state.tabs.forEach(function (id) {
+    var a = BY_ID[id];
+    if (!a) { return; }
+    var t = el("button", "tab" +
+      (id === state.activeId ? " active" : "") +
+      (id === state.previewId ? " preview" : ""));
+    t.title = a.title + " — " + a.game;
+    t.setAttribute("role", "tab");
+    t.setAttribute("aria-selected", id === state.activeId ? "true" : "false");
+
+    if (a.stale) { t.appendChild(el("span", "dot stale")); }
+    else if (a.spoiler) { t.appendChild(el("span", "dot spoiler")); }
+    t.appendChild(el("span", "tt", a.title));
+
+    var x = el("button", "x", "×");
+    x.setAttribute("aria-label", "Close " + a.title);
+    x.addEventListener("click", function (ev) { ev.stopPropagation(); closeTab(id); });
+    t.appendChild(x);
+
+    t.addEventListener("click", function () { activateTab(id); });
+    t.addEventListener("auxclick", function (ev) {
+      if (ev.button === 1) { ev.preventDefault(); closeTab(id); }
+    });
+    strip.appendChild(t);
+  });
+
+  if (inFocus() && state.tabs.length) {
+    // Focus hides the pane header, so the way out rides along with the tabs.
+    strip.appendChild(el("span", "tab-spacer"));
+    var ex = el("button", "tab", "Exit focus");
+    ex.title = "Bring back the list and top bar (Esc)";
+    ex.addEventListener("click", function () { setFocus(false); });
+    strip.appendChild(ex);
+  }
+}
+
+function open(id) { openTab(id, {}); }
+
+function renderPaneHeader() {
+  var a = current;
+  if (!a) { return; }
+  var id = a.id;
+  var hd = document.getElementById("paneHd");
+  hd.innerHTML = "";
+  hd.appendChild(el("span", "title", a.title));
+  hd.appendChild(el("span", "sub", a.game + " · " + a.kind + " · " + a.modified + " · " + a.sizeKb + " KB"));
+  if (a.stale) hd.appendChild(el("span", "badge stale", "stale"));
+  if (a.spoiler) {
+    var sb = el("span", "badge spoiler", a.spoiler);
+    if (a.note) sb.title = a.note;
+    hd.appendChild(sb);
+  }
+  if (!a.inManifest) hd.appendChild(el("span", "badge", "unlisted"));
+  hd.appendChild(el("span", "spacer"));
+
+  var pinBtn = el("button", "tool", isPinned(id) ? "Unpin" : "Pin");
+  pinBtn.addEventListener("click", function () {
+    var i = state.pins.indexOf(id);
+    if (i === -1) { state.pins.push(id); } else { state.pins.splice(i, 1); }
+    save(); renderSidebar(); pinBtn.textContent = isPinned(id) ? "Unpin" : "Pin";
+  });
+  hd.appendChild(pinBtn);
+
+  var copyBtn = el("button", "tool", "Copy path");
+  copyBtn.addEventListener("click", function () { copyText(a.path); });
+  hd.appendChild(copyBtn);
+
+  var closeBtn = el("button", "tool", "Close tab");
+  closeBtn.title = "Close this artifact (Alt+W)";
+  closeBtn.addEventListener("click", function () { closeTab(id); });
+  hd.appendChild(closeBtn);
+}
+
+function copyText(text) {
+  var done = function () { toast("Path copied"); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else { fallback(); }
+  function fallback() {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove(); done();
+    } catch (e) { toast("Copy blocked: " + text); }
+  }
+}
+
+/* ---------- controls ---------- */
+document.getElementById("search").addEventListener("input", renderSidebar);
+document.getElementById("homeBtn").addEventListener("click", renderHome);
+document.getElementById("focusBtn").addEventListener("click", function () { setFocus(!inFocus()); });
+
+document.getElementById("reloadBtn").addEventListener("click", function () {
+  var f = document.querySelector("#panes .pane.active iframe");
+  if (f) { f.src = f.src; toast("Reloaded"); }
+});
+
+document.getElementById("openExternal").addEventListener("click", function () {
+  if (!current) { toast("Nothing open"); return; }
+  window.open(current.url, "_blank");
+});
+
+document.addEventListener("keydown", function (ev) {
+  var search = document.getElementById("search");
+  var typing = document.activeElement === search;
+
+  // Tab keys first. Ctrl+W and Ctrl+Shift+W belong to the browser window itself
+  // and cannot be intercepted, so closing a tab is Alt+W.
+  if (ev.altKey && (ev.key === "w" || ev.key === "W")) {
+    ev.preventDefault();
+    if (state.activeId) { closeTab(state.activeId); }
+    return;
+  }
+  if (ev.key === "Tab" && ev.ctrlKey) {
+    ev.preventDefault(); cycleTab(ev.shiftKey ? -1 : 1);
+    return;
+  }
+  if (ev.altKey && ev.key >= "1" && ev.key <= "9") {
+    var n = parseInt(ev.key, 10) - 1;
+    if (state.tabs[n]) { ev.preventDefault(); activateTab(state.tabs[n]); }
+    return;
+  }
+
+  if ((ev.key === "b" || ev.key === "B") && (ev.ctrlKey || ev.metaKey)) {
+    ev.preventDefault(); setSidebar(!state.sideCollapsed, true);
+  } else if ((ev.key === "f" || ev.key === "F") && !typing && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+    ev.preventDefault(); setFocus(!inFocus());
+  } else if (ev.key === "/" && !typing) {
+    ev.preventDefault();
+    if (inFocus()) setFocus(false);
+    if (state.sideCollapsed) setSidebar(false, false);
+    search.focus(); search.select();
+  } else if (ev.key === "Escape") {
+    // Unwind one layer at a time: focus, then the search box, then back to home.
+    if (inFocus()) { setFocus(false); }
+    else if (typing && search.value) { search.value = ""; renderSidebar(); }
+    else { renderHome(); }
+  } else if (ev.key === "Enter" && document.activeElement === search) {
+    if (visualOrder.length) open(visualOrder[0].id);
+  } else if ((ev.key === "ArrowDown" || ev.key === "ArrowUp") && visualOrder.length) {
+    if (document.activeElement.tagName === "IFRAME") return;
+    ev.preventDefault();
+    var i = current ? visualOrder.map(function (a) { return a.id; }).indexOf(current.id) : -1;
+    i = ev.key === "ArrowDown" ? i + 1 : i - 1;
+    if (i < 0) i = visualOrder.length - 1;
+    if (i >= visualOrder.length) i = 0;
+    // Browsing with the arrows reuses one preview tab; clicking a row is what
+    // commits an artifact to a tab of its own.
+    openTab(visualOrder[i].id, { preview: true });
+    var active = document.querySelector(".row.active");
+    if (active && active.scrollIntoView) active.scrollIntoView({ block: "nearest" });
+  }
+});
+
+/* ---------- boot ---------- */
+// #<id> deep-links straight to one artifact, so a second shortcut can point at
+// a single tool: index.html#guide-slug/file.html
+applyLayout();
+buildHome();
+
+// Tabs survive a relaunch, minus any artifact that no longer exists. Only the
+// active one loads now; the rest build their iframe the first time you switch
+// to them, so reopening with a dozen tabs is not a dozen page loads.
+state.tabs = state.tabs.filter(function (id) { return !!BY_ID[id]; });
+if (state.activeId && !BY_ID[state.activeId]) { state.activeId = null; }
+renderSidebar();
+renderTabs();
+
+var hashId = "";
+try { hashId = decodeURIComponent((location.hash || "").replace(/^#/, "")); } catch (e) { }
+if (hashId && BY_ID[hashId]) { openTab(hashId, {}); }
+else if (state.activeId) { activateTab(state.activeId); }
+else if (state.tabs.length) { activateTab(state.tabs[0]); }
+else { renderHome(); }
+</script>
+</body>
+</html>

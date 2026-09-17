@@ -4,6 +4,10 @@
 
 A runtime AI skill that loads a Hintforge-format game guide from your workspace and answers your in-game questions in the guide's persona voice, on graduated spoiler dials you set at the start. Two dials (enemy 0-5, puzzle 0-3) control how much it volunteers. It reads the guide's files before answering -- never from training data.
 
+![A session with a guide whose persona voice is the game's own antagonist: on entering a puzzle room the guide names the mechanic and stops there, gives a first nudge when asked, escalates to a fuller hint only on a second request, then records the chamber as complete when the player says they are through](assets/readme-session.png)
+
+The voice is the guide's, set per game. What it says comes out of that guide's own files, and the spoiler dials decide how much of it you get.
+
 ## Install
 
 Paste this into Claude Code, Codex, or OpenClaw:

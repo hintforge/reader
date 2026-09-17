@@ -75,6 +75,15 @@ Every turn where the player asked a decision or a lookup question is a **critica
 
 **Shed from the bottom.** If a turn runs long, drop rank 4 (publish) and even rank 3 (persist) before you ever compress rank 1 (answer). "I ran long, so I'll just publish the card" is exactly backwards.
 
+**Check what renders, not what you wrote.** An artifact is judged by the page the player opens, and you never see that page -- you see only the markup you emitted. After writing or updating a local HTML artifact, read the file back and look for the faults that are invisible in source and obvious on screen:
+
+- **Double-escaped entities.** `&amp;mdash;` and `&amp;middot;` print as the literal text `&mdash;` and `&middot;` in the middle of a sentence. Search the written file for `&amp;` followed by a word and a semicolon; every hit is a bug. This one is intermittent rather than systematic -- the same file usually holds far more correct entities than broken ones -- so it survives a spot check of a single line and needs a search of the whole file.
+- **A second `<style>` block** that re-declares the same variables and silently voids the palette defined above it.
+- **Unclosed or mis-nested tags** that swallow the rest of a section.
+- **Dead wiring** -- a control, filter, or export the markup shows but no handler is bound to.
+
+None of these announce themselves while you are writing; they surface the moment a person opens the file, often long afterwards. The check costs one read and belongs in the same turn as the write, not in a later audit.
+
 **Close once.** A full checkpoint close (verify + finish) is a session-END action, not a per-answer one. During live play, edit the corpus and the corpus CHECKPOINT freely as you go, but run the close a single time at the end of the session. Repeated mid-play closes are churn that only create more chances to bury the next answer behind rank-4 admin.
 
 **Log the gaps you saw, not just the gaps you said.** At the close, build the gap ledger from what you *observed*, not only from what you narrated to the player. Re-scan the session for corpus `Glob` / `Read` / `Grep` calls that came back empty or absent: any real corpus gap that surfaced that way but was never written down gets logged to `CHECKPOINT.md` `## Open threads` as a `Corpus gap:` entry before you close. A gap you found through a silent empty lookup is as real as one you announced out loud -- do not let it evaporate just because you never said it.

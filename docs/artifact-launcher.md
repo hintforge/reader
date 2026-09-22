@@ -27,8 +27,9 @@ It reads your files and never writes to them.
 
 - **PowerShell** to build the index: Windows PowerShell 5.1 (preinstalled on Windows) or
   PowerShell 7 on any platform.
-- **A Chromium browser** (Chrome or Edge) for the app-window launcher. Any browser can open
-  the generated `index.html` directly.
+- **A Chromium browser** (Chrome or Edge) for the app-window launcher, which is **Windows-only**
+  (`launch.ps1` looks for Chrome or Edge in the Windows install locations). Any browser on any
+  platform can open the generated `index.html` directly.
 - **Python with Pillow** — optional, only to regenerate the shortcut icon.
 
 ## Setup
@@ -55,6 +56,9 @@ This writes `index.html` beside the script. Re-run it any time you add artifacts
 `launch.ps1` do it for you, which it does on every launch.
 
 **3. Open it.**
+
+On macOS or Linux, open `index.html` in your browser (`open index.html` / `xdg-open index.html`).
+On Windows:
 
 ```
 pwsh -File launch.ps1
@@ -108,5 +112,5 @@ intercepted by a page.
 - Everything is local. No server, no network, no telemetry; the page opens over `file://`.
 - Pins, tabs and layout live in your browser's local storage for that page, so they are
   per-browser and per-machine.
-- `install_shortcut.ps1` is Windows-only. On macOS and Linux, run `launch.ps1`, or open the
-  generated `index.html` yourself.
+- `install_shortcut.ps1` and `launch.ps1` are Windows-only. On macOS and Linux, run
+  `build_index.ps1` under PowerShell 7 and open the generated `index.html` yourself.

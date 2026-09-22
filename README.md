@@ -51,6 +51,8 @@ After updating, just resume play; your existing guides keep working as-is. (If a
 
 Guides build interactive artifacts as self-contained HTML files under `<guide>/artifacts/` -- planners, dossiers, browsers. Once you own a few guides those files are scattered across folders. The launcher shipped in `tools/artifact-launcher/` puts them all in one window: grouped by guide, searchable, with tabs that keep each artifact's state so switching away from a planner and back doesn't reload it. Spoiler and staleness flags come from each guide's manifest, so you see them before you open anything.
 
+Open `.agents/skills/hintforge-reader/tools/artifact-launcher/index.html` in any browser (build it once with `build_index.ps1`, which runs under PowerShell 7 on Linux and macOS as well as Windows). On Windows, `launch.ps1` rebuilds the index and opens it as its own app window:
+
 ```
 pwsh -File .agents/skills/hintforge-reader/tools/artifact-launcher/launch.ps1
 ```

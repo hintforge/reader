@@ -4,6 +4,14 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Gated content needs two signals, and the gate covers every surface (framework v97)
+
+**Reader changes.** In `.agents/skills/hintforge-reader/persona_universal.md`, next to the default-deny clause: gated-class content (spoiler-tiered claims, story, late-game, identity reveals) is delivered only when a content match AND a player-originated signal are both present. The signal is a question naming the entity, a stated "I already know", or a spoiler dial set at session start that covers the tier. The gate now names every surface the reader can read (corpus files, raw save data, web results, pasted screenshots); a surface it was never taught counts as a leak path, not a safe path.
+
+**Docs.** `README.md` and `docs/artifact-launcher.md` now tell Linux and macOS users to build the index with `build_index.ps1` under PowerShell 7 and open `index.html` directly; `launch.ps1` (the Chrome/Edge app window) is Windows-only and was previously documented as working on any platform.
+
+**Compatibility.** No corpus-format change; this is a runtime-behaviour rule.
+
 ### Initiative on both sides, properties are looked up not guessed, and the reader says which branch it is writing to (framework v96)
 
 **Reader changes.** All in `.agents/skills/hintforge-reader/persona_universal.md`.

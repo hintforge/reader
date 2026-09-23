@@ -1,7 +1,7 @@
 # Install on Claude Code
 
 1. Clone this repo to any local path.
-2. Run `/plugin add <path-to-clone>/.agents/skills/hintforge-reader/` from inside Claude Code.
+2. Copy the skill folder `.agents/skills/hintforge-reader/` to `~/.claude/skills/hintforge-reader/` (on Windows, `~` is your user folder, `%USERPROFILE%`). This folder is self-contained. To update later, run `git pull` in the clone and copy the folder again, because the copy does not follow the clone.
 3. Drop a Hintforge-format guide folder into your workspace.
 4. Start a new session in that workspace.
 

@@ -2,7 +2,9 @@
 
 **Spoiler-controlled hint companion for any video game guide you've installed.**
 
-> Want to **build** a guide for a game, or update one? That's the [`hintforge/builder`](https://github.com/hintforge/builder) skill -- it walks you through scaffolding a guide for any published video game. This reader plays the guides it builds.
+> Want to **build** a guide from scratch or update one? Go to [`hintforge/builder`](https://github.com/hintforge/builder) -- the builder skill that walks you through scaffolding a guide for any published video game.
+>
+> **Pre-built guides are available now:** browse the public guide repositories in the [`hintforge` organization](https://github.com/orgs/hintforge/repositories).
 
 A runtime AI skill that loads a Hintforge-format game guide from your workspace and answers your in-game questions in the guide's persona voice, on graduated spoiler dials you set at the start. Two dials (enemy 0-5, puzzle 0-3) control how much it volunteers. It reads the guide's files before answering -- never from training data.
 

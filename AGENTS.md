@@ -4,7 +4,7 @@ This repository is the **Hintforge reader** skill -- a runtime spoiler-controlle
 
 ## Skill location
 
-The skill lives at [`.agents/skills/hintforge-reader/SKILL.md`](.agents/skills/hintforge-reader/SKILL.md). This path is read identically by Claude Code, Codex CLI (which scans `.agents/skills/` from cwd up), and OpenClaw.
+The skill lives at [`.agents/skills/hintforge-reader/SKILL.md`](.agents/skills/hintforge-reader/SKILL.md). Codex CLI (which scans `.agents/skills/` from the working directory up to the repo root) and OpenClaw (which scans `<workspace>/.agents/skills/`) can find it there. Claude Code does not read `.agents/skills/`: copy the skill folder into `~/.claude/skills/` as described in [`docs/install/claude-code.md`](docs/install/claude-code.md). Install steps for every runtime: [`docs/install/`](docs/install/).
 
 ## Companion skill
 

@@ -1,6 +1,6 @@
 # OS Compatibility -- Player-Facing
 
-What you need to run a hintforge guide on your machine, on a per-OS basis. Runtime-specific caveats (Claude Code, Cowork, browser claude.ai, Codex, OpenClaw) live with each runtime's [installation documentation](https://github.com/hintforge/reader/tree/main/docs/install). For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/hintforge/builder/blob/main/os_compatibility.md).
+What you need to run a hintforge guide on your machine, on a per-OS basis. Runtime-specific caveats (Claude Code, Cowork, browser claude.ai, Codex, OpenClaw) live with each runtime's install doc -- see [`../../../docs/install/`](../../../docs/install/). For the full portability matrix + adaptation roadmap aimed at maintainers and porters, see the [builder skill's `os_compatibility.md`](https://github.com/hintforge/builder/blob/main/os_compatibility.md).
 
 ## Verified-running setup
 
@@ -35,4 +35,4 @@ This sets honest expectations and invites contribution to fill gaps. The full bo
 
 ## Runtime caveats
 
-Runtime-specific limitations (Cowork session-scoping, browser claude.ai persistence, etc.) live with each runtime's install doc rather than in this OS-only matrix: [Claude Code](https://github.com/hintforge/reader/blob/main/docs/install/claude-code.md), [Codex](https://github.com/hintforge/reader/blob/main/docs/install/codex.md), and [OpenClaw](https://github.com/hintforge/reader/blob/main/docs/install/openclaw.md).
+Runtime-specific limitations (Cowork session-scoping, browser claude.ai persistence, etc.) live with each runtime's install doc rather than in this OS-only matrix. For Claude Code (including Cowork and browser claude.ai), see [`../../../docs/install/claude-code.md`](../../../docs/install/claude-code.md). For Codex and OpenClaw, see the matching install docs.

@@ -9,4 +9,4 @@ For Codex desktop, use the Skill Picker to point at `.agents/skills/hintforge-re
 
 For a global install, copy `.agents/skills/hintforge-reader/` to `~/.codex/skills/hintforge-reader/`.
 
-**Verification.** Ask "where was I" inside a guide folder. The reader should greet you in the guide's persona voice and ask which spoiler tier you want.
+**Verification.** Ask "where was I" inside a guide folder. The reader must load its rule files and read relevant corpus content before answering in the guide's persona voice. It confirms position and spoiler dials on the first play session; returning sessions use the saved settings.

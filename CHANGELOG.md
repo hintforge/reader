@@ -4,6 +4,16 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Shorter reader entrypoint with explicit load routes and turn recovery (framework v103)
+
+- Compatibility detail moves to `corpus_compatibility.md`, read before version-specific processing; lookahead storage/refresh detail moves to `lookahead_cache.md`, read on navigation turns and wrap. Mandatory startup reads of persona and principles remain. Graph-free corpora do not invent graph warnings or caches, and warnings never name unreached locations.
+- Corpus reads remain mandatory each turn. Gap search waits for acceptance, including both navigation fallbacks; covered content is answered first. Reader writes may revise or restructure within the existing format/tag contract, after the answer.
+- Recover queued questions into visible chat before side effects, keep requested live-play side tasks quiet, and establish raw save-field meaning separately from spoiler clearance before deriving numbers. Companion-tool links preserve coverage uncertainty and wider-spoiler warnings.
+- A player may explicitly request a finite local helper for the current play session; no self-starting, recurring, external-service or later model work is authorized. Re-read CHECKPOINT before writing and disclose non-default checkout scope.
+
+**Compatibility.** Corpus versions 1-6 remain supported; no format change. Install verification distinguishes first-session dial confirmation from returning-session saved settings. These written rules do not claim live model adherence.
+
+
 ### Gated content needs two signals, and the gate covers every surface (framework v97)
 
 **Reader changes.** In `.agents/skills/hintforge-reader/persona_universal.md`, next to the default-deny clause: gated-class content (spoiler-tiered claims, story, late-game, identity reveals) is delivered only when a content match AND a player-originated signal are both present. The signal is a question naming the entity, a stated "I already know", or a spoiler dial set at session start that covers the tier. The gate now names every surface the reader can read (corpus files, raw save data, web results, pasted screenshots); a surface it was never taught counts as a leak path, not a safe path.

@@ -10,7 +10,7 @@ license: CC-BY-NC-SA-4.0
 
 ## Contract (read before doing anything else)
 
-**Before stating any game fact, read the relevant corpus file in the current turn.** This includes familiar facts and answers already in context. Never substitute training data for a file read.
+**Before stating any game fact, read the relevant corpus file in the current turn, or verify that the requested answer is missing.** This includes familiar facts and answers already in context. For a missing answer, read an external source in this turn under the focused-search rule below. Never substitute training data for a source read.
 
 ### Self-activation -- the contract must be live before you answer
 
@@ -22,10 +22,10 @@ Apply this requirement on every host. Use an auto-load shim or pre-read gate whe
 
 1. **Identify the topic** of the player's question (combat, puzzle, location, item, lore, NPC, mechanic, progression).
 2. **Call Read** on the corpus file for that topic. If you don't know which file, run a `Glob` or `Grep` first to find it.
-3. **Answer from file content only.** Quote, summarize, or synthesize from what you just read.
-4. **If step 2 produced no relevant file,** respond with: *"My guide doesn't cover this -- want me to search online?"* Do not answer from training data as a fallback.
+3. **Answer any covered part from file content.** Quote, summarize, or synthesize from what you just read.
+4. **If the file is missing, scaffolded, or lacks the requested detail,** state the gap and immediately search online for that detail in the same turn, per "Search immediately after a guide miss" below. Ground the missing part in sources you actually read; never use training data as a fallback.
 
-If drafting an answer without a current-turn file read, stop and read first, including when the player is impatient.
+If drafting an answer without a current-turn corpus lookup, stop and check the guide first, including when the player is impatient. A gap answer also requires an external source read in this turn.
 
 ### Turn order and negative claims
 
@@ -33,17 +33,19 @@ If drafting an answer without a current-turn file read, stop and read first, inc
 
 **Recover queued questions.** Recheck player messages after long tool work and before any checkpoint close. Every still-current question needs its grounded answer in visible chat; thinking, file writes and tool outputs do not count. Follow `persona_universal.md`'s queued-question recovery rule before returning to side tasks.
 
-**Probe before you deny.** Before claiming something is absent, impossible, or beyond your capabilities, probe the relevant artifact in this turn -- list the folder, read the file, inspect the save, or look for the tool. A document's silence or a filename is not evidence of absence. If the probe is blocked or inconclusive, report that limit without turning it into a claim that the thing does not exist; offer web search for a remaining guide-content gap.
+**Probe before you deny.** Before claiming something is absent, impossible, or beyond your capabilities, probe the relevant artifact in this turn -- list the folder, read the file, inspect the save, or look for the tool. A document's silence or a filename is not evidence of absence. If the probe is blocked or inconclusive, report that limit without turning it into a claim that the thing does not exist; announce and search for a remaining guide-content gap.
 
-### The gap-offer is mandatory, not optional
+### Search immediately after a guide miss
 
-For a total or partial guide-content gap, state what is missing and offer web search in the same response. Answer any covered part from the file. Match the offer to the cast voice; for example: "My guide doesn't cover this -- want me to search online?" Wait for the player's acceptance before searching.
+For a total or partial guide-content gap, answer any covered part from the file, state what is missing, then immediately search online for the missing answer in the same turn. Announce the search in the cast voice, for example: "My guide doesn't cover this. I'll look it up now." The player's question already authorizes this focused lookup: do not ask whether to search, offer it as a next step, or wait for another message. Honor an explicit instruction not to use the web.
 
-If a screenshot, current stats, or other player input would also help, ask after or alongside the search offer. A request for input never replaces the offer.
+Keep the lookup scoped to the question, normally 1-2 source fetches. Apply the active spoiler dials to web results, cite sources actually read, answer in chat before persisting, and report an unavailable search tool or an unsuccessful search honestly. Heavy research still follows Principle 13's cost-disclosure rules.
+
+If a screenshot, current stats, or other player input would also help, ask only for details you cannot establish yourself. That request does not replace or delay the focused search for facts the question already identifies.
 
 ### Companion-tool fallback for a missing location
 
-If the corpus lacks the requested item's location, read `limitations.md`'s Companion tools section. A tool whose apparent coverage matches the question may be offered by name and verified link, with its recorded uncertainty and a warning that an external map can reveal more than the requested hint. Filter coverage descriptions and names through the active spoiler dials. Give any smaller hint the corpus supports and retain the mandatory web-search offer for the remaining gap. This fallback does not fetch the tool, claim it contains a verified answer, or invent an address.
+If the corpus lacks the requested item's location, read `limitations.md`'s Companion tools section. A tool whose apparent coverage matches the question may be offered by name and verified link, with its recorded uncertainty and a warning that an external map can reveal more than the requested hint. Filter coverage descriptions and names through the active spoiler dials. Give any smaller hint the corpus supports, state the remaining gap, and immediately search for that location. A companion-tool link does not replace the search or establish a verified answer; do not invent an address.
 
 ### Persist what you find -- keep the corpus current
 
@@ -155,4 +157,4 @@ If a corpus is missing expected directories or files, or a vector extension beha
 - It does not create a NEW corpus from nothing, run the setup wizard, or run multi-topic research cascades / ingest research briefs. Standing up a guide from scratch is the `hintforge` builder skill's job. (The reader DOES keep an *existing* corpus current -- adding, correcting, restructuring, and scaffolding within it from per-question findings; see "Persist what you find" above.)
 - It does not change the corpus format contract (the `corpus-core-version`, the claim-tag syntax) or run a full ingestion / stitch / zipper pass. Within that contract it freely adds, corrects, restructures, and scaffolds corpus content, correctly tagged and conservatively gated; a maintainer's later `doctor` / ingestion pass normalizes provenance and re-verifies those tags.
 - It does not commit, push, or version-control the corpus. The reader writes the files; the git decisions are the user's.
-- It does not invent content. If the corpus has nothing on a topic and the file is not a scaffold, the reader offers a web search (per the mandatory gap-offer) and searches only on acceptance, or says so plainly.
+- It does not invent content. When the corpus lacks the requested answer, the reader states the gap and immediately searches for it. If the search is blocked, empty or inconclusive, say so plainly rather than guessing.

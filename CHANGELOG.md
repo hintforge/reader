@@ -4,6 +4,12 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Immediate focused search after a guide miss (framework v105)
+
+- After checking the guide, the reader states any missing answer and immediately searches online in the same turn. A game question authorizes its focused lookup; total, partial, navigation and named-property gaps no longer wait for a second request. An explicit no-web instruction is honored.
+- Covered answers still come from the guide. Web findings are source-cited, filtered through the active spoiler dials, answered in chat and then persisted with the existing claim tags. Companion-tool links and requests for screenshots do not replace the lookup.
+- Focused lookups normally use 1-2 source fetches. Heavy research retains its opt-in and cost-disclosure rules. Corpus versions 1-6 remain supported with no format change. This supersedes the search-acceptance behavior recorded for framework v103 below.
+
 ### Shorter reader entrypoint with explicit load routes and turn recovery (framework v103)
 
 - Compatibility detail moves to `corpus_compatibility.md`, read before version-specific processing; lookahead storage/refresh detail moves to `lookahead_cache.md`, read on navigation turns and wrap. Mandatory startup reads of persona and principles remain. Graph-free corpora do not invent graph warnings or caches, and warnings never name unreached locations.

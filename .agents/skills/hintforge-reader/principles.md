@@ -87,8 +87,8 @@ Heavy operations (game research, content sweeps, multi-source fetching) must be 
 
 **How to apply:**
 - Keep core setup lightweight when optional steps are skipped. Do **not** trigger research at completion.
-- Invoke research only on an explicit user action (a command, verbal request, or supplied brief). Name the operation, scope, and estimated cost; label estimates as estimates rather than fixed subscription allowances.
-- Keep per-question research narrow, normally 1-2 fetches for the requested gap. Persist source-cited, conservatively spoiler-tagged findings in the matching corpus file, per `SKILL.md` "Persist what you find".
+- Launch heavy research only on an explicit user action (a command, verbal request, or supplied brief). Name the operation, scope, and estimated cost; label estimates as estimates rather than fixed subscription allowances.
+- A player's game question already authorizes a focused lookup for any missing answer. After checking the corpus, state the gap and immediately search without asking for another go-ahead, unless the player explicitly prohibited web access. Keep per-question research narrow, normally 1-2 fetches. Persist source-cited, conservatively spoiler-tagged findings in the matching corpus file, per `SKILL.md` "Persist what you find".
 - Before any operation that will use ≥10 messages, surface the estimate and ask consent.
 - The user may set a token-budget preference at setup ("I'm on Pro, keep heavy ops opt-in"; "I'm on Max, I don't mind if you use 50 messages"); store in CHECKPOINT.
 

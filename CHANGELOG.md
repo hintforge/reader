@@ -4,6 +4,13 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Session-close ref line and current capture values (framework v107)
+
+- When the guide folder is under git, the reader's CHECKPOINT close ends with one `HF-CLOSE-REF {...}` line: branch, commit and a count of uncommitted files, never file names. The reader never commits, stashes or switches branches to produce it; a folder without git emits nothing.
+- The compatibility note's `capture-method` list now includes `mediawiki_parse` and the new `browser_fetch`. The value stays audit metadata the persona never recites.
+- README: the reader does not check corpus version at session start; the doctor procedure compares versions. The game-content issue link now points at the org's repository list.
+- Corpus versions 1-6 remain supported; no format change.
+
 ### Only chat counts as the answer, on every turn (framework v106)
 
 - Turn priority rank 1 (ANSWER) now carries the test that only chat counts: a question answered in thinking, a tool result, a file, an artifact or a save notice ("Saved to `<file>`") remains unanswered until its answer appears in chat. The queued-question recovery rule now points to rank 1 for this test instead of holding its own copy, so the rule covers questions asked at the start of a turn as well as queued ones.

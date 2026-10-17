@@ -6,7 +6,7 @@ Version map: [Claim capture](#claim-capture-v2) · [Game-version drift](#game-ve
 
 ## Claim capture (v2)
 
-Parse `capture-method` silently when present. Its values include `web_fetch | special_export | breezewiki | archive_ph | manual_paste`; it is audit metadata, never persona output. On v1 corpora, skip the absent field. No other reader behavior depends on it.
+Parse `capture-method` silently when present. Its values include `web_fetch | special_export | mediawiki_parse | browser_fetch | breezewiki | archive_ph | manual_paste`; it is audit metadata, never persona output. On v1 corpora, skip the absent field. No other reader behavior depends on it.
 
 ## Game-version drift (v3)
 

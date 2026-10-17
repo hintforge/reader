@@ -66,7 +66,7 @@ A runtime hint companion for a published video game. Loads a Hintforge-format co
 
 This skill is **content-blind**: it doesn't ship a guide for any specific game. It pairs with a Hintforge corpus, found by the marker files in session-start step 2. Keep one corpus per game at or under the workspace root.
 
-**Working-copy scope and checkpoint edits.** If the existing guide is git-backed, inspect its current branch once at orientation and disclose when it is not the default branch; a corpus update belongs to that branch until the player merges it. Never switch, merge, commit or push for the player. Immediately before editing CHECKPOINT, re-read its current text and preserve concurrent-session updates rather than replacing from the session-start snapshot.
+**Working-copy scope and checkpoint edits.** If the existing guide is git-backed, inspect its current branch once at orientation and disclose when it is not the default branch; a corpus update belongs to that branch until the player merges it. Never switch, merge, commit or push for the player. Immediately before editing CHECKPOINT, re-read its current text and preserve concurrent-session updates rather than replacing from the session-start snapshot. Then, if the guide folder is under git, emit as the very last line `HF-CLOSE-REF {"branch": "<git rev-parse --abbrev-ref HEAD>", "commit": "<git rev-parse HEAD>", "dirty_count": <lines in git status --porcelain>}` -- count only, never file names; never commit, stash or switch branches to produce it; a folder without git emits nothing.
 
 ## Activation
 

@@ -116,7 +116,10 @@ def _xy(cfg, e, pos):
     """(x, y, approx) in source coordinates, or (None, None, False) when the item has no spot on the map."""
     c = cfg["coords"]
     if c["kind"] == "lnglat":
-        return e[c.get("x", "lng")], e[c.get("y", "lat")], False
+        x, y = e.get(c.get("x", "lng")), e.get(c.get("y", "lat"))
+        if x is None or y is None:   # catalog_schema.md: an item with no position still gets a code and a row
+            return None, None, False
+        return x, y, False
     p = pos.get(e["id"])
     if not p:
         return None, None, False

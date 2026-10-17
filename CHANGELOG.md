@@ -4,6 +4,11 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Honest marks outside the launcher; map builds with no positioned items (framework v113)
+
+- The collectible map opened without the launcher (a double-click in the everyday browser) now says its marks stay in this browser only and must be ticked again inside the artifact launcher. The launcher runs in its own browser profile, so it never sees those marks; the old message implied they would be sent. `test_map.py` checks the wording.
+- `build_map.py`: a view fitted to the items (`items_pad`) falls back to the whole picture when no item has a position, instead of stopping the build. `test_item_codes.py` builds a page from a catalog with no positions.
+
 ### Save helper hardening and collectible map fixes (framework v112)
 
 - The save helper (`tools/artifact-launcher/state_bridge.ps1`) makes a random token each time it starts and refuses any request without it. A file page's `Origin: null` is no longer enough, since a sandboxed frame on any web page sends the same value. The launcher starts the helper first, opens the launcher page with the token, and the launcher page passes it only to artifacts whose guide declares `"writes_state"`. A map opened any other way keeps its marks in the browser and says so.

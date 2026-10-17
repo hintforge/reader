@@ -4,6 +4,11 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Only chat counts as the answer, on every turn (framework v106)
+
+- Turn priority rank 1 (ANSWER) now carries the test that only chat counts: a question answered in thinking, a tool result, a file, an artifact or a save notice ("Saved to `<file>`") remains unanswered until its answer appears in chat. The queued-question recovery rule now points to rank 1 for this test instead of holding its own copy, so the rule covers questions asked at the start of a turn as well as queued ones.
+- Corpus versions 1-6 remain supported; no format change. This written rule does not claim live model adherence.
+
 ### Immediate focused search after a guide miss (framework v105)
 
 - After checking the guide, the reader states any missing answer and immediately searches online in the same turn. A game question authorizes its focused lookup; total, partial, navigation and named-property gaps no longer wait for a second request. An explicit no-web instruction is honored.

@@ -4,6 +4,10 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Install doc points at the builder's reader safeguard (framework v110)
+
+- The Claude Code install doc now says the builder's setup can add a safeguard to a guide folder that makes the AI load the reader before reading guide files. No reader behavior change.
+
 ### Web findings are saved and read back; game-window screenshots (framework v109)
 
 - Saving a source-supported web finding is now required. After the chat answer, the reader writes the finding to its topic file in the corpus's claim format, then reads the file back and confirms the fact, source, confidence and spoiler tags are all there. A new `persistence.md` holds the procedure. Turn priority no longer calls saving optional: a long turn may defer a save but not drop it, and the close reconciles every finding used.

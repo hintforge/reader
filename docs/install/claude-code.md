@@ -5,7 +5,7 @@
 3. Drop a Hintforge-format guide folder into your workspace.
 4. Start a new session in that workspace.
 
-**Verification.** Ask "where was I" or "hint for this puzzle" in a guide-folder session. The reader must load its rule files and read relevant corpus content before answering in the guide's persona voice. It confirms position and spoiler dials on the first play session; returning sessions use the saved settings. If the skill is inactive, invoke `/hintforge-reader` before asking again. Auto-load in guide folders has a known reliability gap.
+**Verification.** Ask "where was I" or "hint for this puzzle" in a guide-folder session. The reader must load its rule files and read relevant corpus content before answering in the guide's persona voice. It confirms position and spoiler dials on the first play session; returning sessions use the saved settings. If the skill is inactive, invoke `/hintforge-reader` before asking again. Auto-load in guide folders is not guaranteed; the builder's setup can add a safeguard to a guide folder that makes the AI load the reader first (builder setup Step 6.6).
 
 ## Runtime caveats
 

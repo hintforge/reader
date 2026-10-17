@@ -13,7 +13,8 @@
 param(
     [switch]$NoRefresh,      # skip the rescan and open the existing index.html
     [switch]$Edge,           # force Edge even if Chrome is installed
-    [string]$WindowSize = '1680,1000'
+    [string]$WindowSize = '1680,1000',
+    [switch]$NoBridge        # do not start the save helper (state_bridge.ps1)
 )
 
 $ErrorActionPreference = 'Stop'
@@ -64,3 +65,15 @@ if (-not $browser) {
 if (-not $browser) { throw 'Could not find Chrome or Edge. Open index.html in any browser instead.' }
 
 Start-Process -FilePath $browser -ArgumentList "--app=$fileUrl", "--window-size=$WindowSize"
+
+# The save helper: lets a page whose guide declares "writes_state" in artifacts/artifacts.json
+# save "taken" marks back into that guide. A second launch finds it running and leaves it be.
+if (-not $NoBridge) {
+    $bridge = Join-Path $here 'state_bridge.ps1'
+    $conhost = Join-Path $env:SystemRoot 'System32\conhost.exe'
+    $ps = (Get-Command powershell.exe -ErrorAction Stop).Source
+    Start-Process -FilePath $conhost -ArgumentList @(
+        '--headless', ('"{0}"' -f $ps), '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-WindowStyle', 'Hidden', '-File', ('"{0}"' -f $bridge)
+    ) -WindowStyle Hidden
+}

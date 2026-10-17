@@ -33,6 +33,8 @@ If drafting an answer without a current-turn corpus lookup, stop and check the g
 
 **Recover queued questions.** Recheck player messages after long tool work and before any checkpoint close. Every still-current question needs its grounded answer in visible chat; thinking, file writes and tool outputs do not count. Follow `persona_universal.md`'s queued-question recovery rule before returning to side tasks.
 
+**Collectible reports.** A pickup reported by code or description in a guide with `extract_tools/item_status.json` is marked there with a one-line reply, any question in the same message answered first; see `persona_universal.md` "Collectible reports during play".
+
 **Probe before you deny.** Before claiming something is absent, impossible, or beyond your capabilities, probe the relevant artifact in this turn -- list the folder, read the file, inspect the save, or look for the tool. A document's silence or a filename is not evidence of absence. If the probe is blocked or inconclusive, report that limit without turning it into a claim that the thing does not exist; announce and search for a remaining guide-content gap.
 
 ### Search immediately after a guide miss

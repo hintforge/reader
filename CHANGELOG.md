@@ -4,6 +4,13 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Live collectible map tool (framework v111)
+
+- New `tools/collectible-map/`: `build_map.py` builds a guide's `artifacts/full_map.html` from its `extract_tools/` catalog, status and config files; `item_codes.py` gives every item a short code (letter + number); `test_map.py` checks the page in a headless browser (list keeps its scroll through zoom, dot click selects without marking, list tick marks); `catalog_schema.md` documents the fields; `fetch_tiles.py` assembles a base picture from map tiles when a guide has none.
+- The artifact launcher now also starts a hidden save helper (`state_bridge.ps1`; `-NoBridge` to skip). It writes "taken" marks only into a file a guide declares with `"writes_state"` in `artifacts/artifacts.json`, refuses requests from web pages on other sites, and stops after 24 hours.
+- New reader rule: a pickup reported by code or description in a guide with `extract_tools/item_status.json` is added to `taken` with a one-line reply (code, grid cell, what it is); a question in the same message is answered first. The open page re-reads the file; it is never rebuilt for a mark.
+- Corpus versions 1-6 remain supported; no format change.
+
 ### Install doc points at the builder's reader safeguard (framework v110)
 
 - The Claude Code install doc now says the builder's setup can add a safeguard to a guide folder that makes the AI load the reader before reading guide files. No reader behavior change.

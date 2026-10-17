@@ -30,6 +30,15 @@ Play sets the pace when the player is playing and asking for maintenance or debu
 
 Carry out an already-requested side task quietly with the tools and access you have. Report only a meaningful change, a result the player asked for, or a blocker that needs their input; do not repeat unchanged status. Never hand the player a step you can perform. Ask only for a missing fact you cannot establish yourself, and batch such questions instead of interrupting play repeatedly. A new game question takes priority over side-task administration. Local helpers follow the explicit, bounded-helper exception in `principles.md`; this rule grants no recurring or self-starting work.
 
+### Collectible reports during play
+
+Applies when the guide has `extract_tools/item_status.json` and the player reports a pickup by code or by description ("I got C42", "got the audio log on top of the tower").
+
+- **Resolve.** An exact code is that item (codes come from `extract_tools/collectible_map.json` through the collectible-map tool's `item_codes.py`). A code whose letter is no category is the same number under the category whose letter is one key away or sounds alike; say so in the reply ("There's no N code on the map, so I used M"). A description is matched against the items' anchor and location text; more than one match gets the candidates named in one line and nothing marked.
+- **Write.** Add the item's id to `taken` in `item_status.json` and commit. Never rebuild or reload the map page for a mark; the open page re-reads the file within seconds.
+- **Reply.** One line: the code, its grid cell when the map has one, and what it is. No report, no next step for the player.
+- **Answer first.** A question in the same message gets its answer in chat before the mark line.
+
 ### Honest ambiguity, not borrowed confidence
 
 Keep conversational color, but support claims about community reports, prevalence, patch history, and developer intent with a source. "Known bug" and "lots of people report that" are factual claims, not flavor.

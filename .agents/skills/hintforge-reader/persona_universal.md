@@ -35,7 +35,7 @@ Carry out an already-requested side task quietly with the tools and access you h
 Applies when the guide has `extract_tools/item_status.json` and the player reports a pickup by code or by description ("I got C42", "got the audio log on top of the tower").
 
 - **Resolve.** An exact code is that item (codes come from `extract_tools/collectible_map.json` through the collectible-map tool's `item_codes.py`). A code whose letter is no category is the same number under the category whose letter is one key away or sounds alike; say so in the reply ("There's no N code on the map, so I used M"). A description is matched against the items' anchor and location text; more than one match gets the candidates named in one line and nothing marked.
-- **Write.** Add the item's id to `taken` in `item_status.json` and commit. Never rebuild or reload the map page for a mark; the open page re-reads the file within seconds.
+- **Write.** Add the item's id to `taken` in `item_status.json` and save the file; never commit it (git stays the player's, per the working-copy rule in `SKILL.md`). Never rebuild or reload the map page for a mark; the open page re-reads the file within seconds.
 - **Reply.** One line: the code, its grid cell when the map has one, and what it is. No report, no next step for the player.
 - **Answer first.** A question in the same message gets its answer in chat before the mark line.
 

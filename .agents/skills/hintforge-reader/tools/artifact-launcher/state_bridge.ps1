@@ -9,16 +9,22 @@
 # No central list names any guide. The page keeps its marks in browser storage
 # too, so nothing is lost while this is not running.
 #
-#   GET  /taken?guide=<folder>&artifact=<file>   -> {"ok":true,"taken":[...],"as_of":"..."}
-#   POST /taken  body {"guide","artifact","id","taken":true|false}  (sent as text/plain,
+#   GET  /taken?guide=<folder>&artifact=<file>&token=<t>   -> {"ok":true,"taken":[...],"as_of":"..."}
+#   POST /taken  body {"guide","artifact","id","taken":true|false,"token"}  (sent as text/plain,
 #        so the browser needs no CORS preflight)
 #
-# Guards: a request carrying a web Origin is refused (only file:// pages, Origin
-# "null", or local tools with no Origin may write); only the "taken" list and
+# Guards: every request must carry this run's token. The helper makes a fresh random
+# token each time it starts and writes it to TokenFile (default
+# %LOCALAPPDATA%\HintforgeArtifactLauncher\bridge_token.txt, inside this Windows user's
+# own app-data folder); launch.ps1 reads it and passes it to the launcher page, which hands it
+# to the artifacts that declare writes_state. Origin "null" alone proves nothing: a
+# sandboxed iframe on any web page sends it too. A request carrying a web Origin is
+# refused outright. "taken" must be a JSON true or false. Only the "taken" list and
 # "as_of" are edited, and a result that no longer parses is never written; each
 # change is logged with its time to %LOCALAPPDATA%\HintforgeArtifactLauncher\bridge.log.
-# Started hidden by launch.ps1; exits when the launcher window closes, after
-# MaxHours, or at once if another copy runs.
+# Started hidden by launch.ps1; exits when the launcher window closes (no browser
+# process uses ProfileDir for two checks in a row), after MaxHours, or at once if
+# another copy runs.
 # ASCII only in this file: Windows PowerShell mangles non-ASCII characters inside
 # double-quoted strings depending on the console code page.
 
@@ -27,7 +33,9 @@ param(
     [string]$ProfileDir,          # launcher browser profile; empty = never auto-exit on window close
     [string]$GuidesRoot,
     [int]$Port = 47831,
-    [double]$MaxHours = 24
+    [double]$MaxHours = 24,
+    [string]$TokenFile,           # where this run's token is written; empty = the default above
+    [int]$WindowCheckSeconds = 30
 )
 
 $ErrorActionPreference = 'Stop'
@@ -74,6 +82,20 @@ $GuidesRoot = [System.IO.Path]::GetFullPath($GuidesRoot)
 
 $mutex = New-Object System.Threading.Mutex($false, "Local\HintforgeArtifactLauncherBridge$Port")
 if (-not $mutex.WaitOne(0)) { exit 0 }
+
+if (-not $TokenFile) { $TokenFile = Join-Path $logDir 'bridge_token.txt' }
+$tokenBytes = New-Object byte[] 24
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($tokenBytes); $rng.Dispose()
+$Token = -join ($tokenBytes | ForEach-Object { $_.ToString('x2') })
+
+function Test-Token([string]$t) {
+    # Same-length, every-character comparison, so the time taken says nothing about a near miss.
+    if (-not $t -or $t.Length -ne $Token.Length) { return $false }
+    $diff = 0
+    for ($i = 0; $i -lt $t.Length; $i++) { $diff = $diff -bor ([int][char]$t[$i] -bxor [int][char]$Token[$i]) }
+    return ($diff -eq 0)
+}
 
 function Resolve-StateFile([string]$guide, [string]$artifact) {
     if ($guide -notmatch '^[A-Za-z0-9_-]+$' -or $artifact -notmatch '^[A-Za-z0-9_.-]+\.html$') { return $null }
@@ -138,6 +160,7 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
     if ($req.Url.AbsolutePath -ne '/taken') { Send $ctx 404 @{ ok = $false; error = 'not found' }; return }
 
     if ($req.HttpMethod -eq 'GET') {
+        if (-not (Test-Token $req.QueryString['token'])) { Send $ctx 403 @{ ok = $false; error = 'bad token' }; return }
         $path = Resolve-StateFile $req.QueryString['guide'] $req.QueryString['artifact']
         if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'artifact not allowed' }; return }
         $st = Read-State $path
@@ -150,15 +173,18 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
     $raw = $reader.ReadToEnd(); $reader.Close()
     if ($raw.Length -gt 4096) { Send $ctx 413 @{ ok = $false; error = 'too large' }; return }
     $b = $raw | ConvertFrom-Json
+    if (-not (Test-Token ([string]$b.token))) { Send $ctx 403 @{ ok = $false; error = 'bad token' }; return }
     $path = Resolve-StateFile ([string]$b.guide) ([string]$b.artifact)
     if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'artifact not allowed' }; return }
     $id = [string]$b.id
     if ($id -notmatch '^[A-Za-z0-9_-]+:[A-Za-z0-9_-]+$') { Send $ctx 400 @{ ok = $false; error = 'bad id' }; return }
+    # Only a JSON true or false: a cast would read the string "false" as true and a missing value as false.
+    if ($b.taken -isnot [bool]) { Send $ctx 400 @{ ok = $false; error = 'taken must be true or false' }; return }
 
     $st = Read-State $path
     $list = New-Object System.Collections.Generic.List[string]
     foreach ($t in $st.taken) { if (-not $list.Contains([string]$t)) { $list.Add([string]$t) } }
-    $want = [bool]$b.taken
+    $want = $b.taken
     $changed = $false
     if ($want -and -not $list.Contains($id)) { $list.Add($id); $changed = $true }
     if (-not $want -and $list.Contains($id)) { [void]$list.Remove($id); $changed = $true }
@@ -179,6 +205,8 @@ function Test-WindowOpen {
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://127.0.0.1:$Port/")
 try { $listener.Start() } catch { Write-Log "could not listen on port ${Port}: $($_.Exception.Message)"; $mutex.ReleaseMutex(); exit 1 }
+try { [System.IO.File]::WriteAllText($TokenFile, $Token, (New-Object System.Text.UTF8Encoding($false))) }
+catch { Write-Log "could not write the token file: $($_.Exception.Message)"; $listener.Stop(); $mutex.ReleaseMutex(); exit 1 }
 Write-Log "bridge started (pid $PID, port $Port, guides $GuidesRoot)"
 
 $deadline = (Get-Date).AddHours($MaxHours)
@@ -196,9 +224,9 @@ try {
                 try { Send $ctx 500 @{ ok = $false; error = $_.Exception.Message } } catch { }
             }
         }
-        # About every 30 seconds: is the launcher window still open? Two misses in
+        # Every WindowCheckSeconds: is the launcher window still open? Two misses in
         # a row, so a browser restart in progress is not mistaken for a close.
-        if ($ProfileDir -and ((Get-Date) - $lastCheck).TotalSeconds -ge 30) {
+        if ($ProfileDir -and ((Get-Date) - $lastCheck).TotalSeconds -ge $WindowCheckSeconds) {
             $lastCheck = Get-Date
             if (Test-WindowOpen) { $missed = 0 } else { $missed++ }
             if ($missed -ge 2) { Write-Log 'launcher window closed; bridge exiting'; break }
@@ -206,5 +234,8 @@ try {
     }
 } finally {
     $listener.Stop(); $listener.Close()
+    try {
+        if ((Test-Path -LiteralPath $TokenFile) -and ([System.IO.File]::ReadAllText($TokenFile) -eq $Token)) { Remove-Item -LiteralPath $TokenFile -Force }
+    } catch { }
     $mutex.ReleaseMutex(); $mutex.Dispose()
 }

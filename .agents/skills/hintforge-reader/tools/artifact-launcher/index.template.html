@@ -702,6 +702,15 @@ function buildHome() {
    you come back to it. Reusing one iframe and swapping its src would reload the
    document and throw that away. */
 
+// launch.ps1 opens this page as index.html?bridge=<token>: the save helper's token for this
+// run. Only artifacts whose guide declares writes_state get it (in their #hash), so no other
+// page ever sees it.
+var BRIDGE_TOKEN = "";
+try { BRIDGE_TOKEN = (/[?&]bridge=([0-9a-f]+)/.exec(location.search) || [])[1] || ""; } catch (e) { }
+function artifactUrl(a) {
+  return a.writes && BRIDGE_TOKEN ? a.url + "#bridge=" + BRIDGE_TOKEN : a.url;
+}
+
 function ensurePane(id) {
   var panes = document.getElementById("panes");
   var existing = panes.querySelector('[data-id="' + id + '"]');
@@ -710,7 +719,7 @@ function ensurePane(id) {
   var pane = el("div", "pane");
   pane.dataset.id = id;
   var frame = document.createElement("iframe");
-  frame.src = a.url;
+  frame.src = artifactUrl(a);
   frame.title = a.title;
   pane.appendChild(frame);
   panes.appendChild(pane);
@@ -896,7 +905,7 @@ document.getElementById("reloadBtn").addEventListener("click", function () {
 
 document.getElementById("openExternal").addEventListener("click", function () {
   if (!current) { toast("Nothing open"); return; }
-  window.open(current.url, "_blank");
+  window.open(artifactUrl(current), "_blank");
 });
 
 document.addEventListener("keydown", function (ev) {

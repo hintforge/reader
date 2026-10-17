@@ -128,7 +128,7 @@ def build(cfg, out=None):
                detailWhere=cfg.get("detail_shows_where", True),
                whereLabel={c["category"]: c["where_label"] for c in cfg["categories"] if c.get("where_label")},
                noteLabel=cfg.get("guide_entries", {}).get("notes", {}).get("label", "How to find it"),
-               sourceLink=t.get("source_link", ""))
+               sourceLink=t.get("source_link", ""), asOf=st.get("as_of", ""))
     sty = cfg.get("style", {})
     rep = {
         "__TITLE__": t.get("title", "Collectible map"), "__SUBTITLE__": t.get("subtitle", ""), "__CREDIT__": t.get("credit", ""),

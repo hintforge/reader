@@ -130,7 +130,9 @@ function Read-Manifest {
         Write-Warning "Unreadable manifest, listing files without it: $manifestPath"
         return $index
     }
-    foreach ($entry in @($manifest.artifacts)) {
+    # A bare list of entries, or { "artifacts": [...] } -- the same two shapes state_bridge.ps1 reads.
+    $entries = if ($manifest -is [System.Array]) { $manifest } else { @($manifest.artifacts) }
+    foreach ($entry in $entries) {
         if (-not $entry) { continue }
         $rel = $null
         foreach ($prop in 'local_path', 'file', 'path') {
@@ -157,6 +159,7 @@ function Read-Manifest {
             status   = if ($entry.PSObject.Properties.Name -contains 'status') { [string]$entry.status } else { $null }
             note     = if ($entry.PSObject.Properties.Name -contains 'spoiler_note') { [string]$entry.spoiler_note } else { $null }
             published = if ($entry.PSObject.Properties.Name -contains 'published_url') { [string]$entry.published_url } else { $null }
+            writes   = [bool]($entry.PSObject.Properties.Name -contains 'writes_state' -and $entry.writes_state)
         }
     }
     return $index
@@ -227,6 +230,7 @@ foreach ($gameDir in (Get-ChildItem -LiteralPath $GuidesRoot -Directory | Sort-O
             status    = if ($meta) { $meta.status } else { $null }
             note      = if ($meta) { $meta.note } else { $null }
             published = if ($meta) { $meta.published } else { $null }
+            writes    = if ($meta) { [bool]$meta.writes } else { $false }
             inManifest = [bool]$meta
         }
     }

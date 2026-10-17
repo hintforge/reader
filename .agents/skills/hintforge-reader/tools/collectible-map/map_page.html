@@ -155,24 +155,31 @@ svg.addEventListener("pointerup",()=>{if(drag&&moved)drawMap();else if(drag){let
  if(n&&n.__item)pick(n.__item,false);else if(n&&n.__land)pickLand(n.__land)}drag=null});
 let touched=false;svg.addEventListener("wheel",()=>touched=true);svg.addEventListener("pointerdown",()=>touched=true);window.addEventListener("resize",()=>{if(!touched)fit(START)});
 // Marking. Each toggle is kept in browser storage at once (pending) and sent to the launcher's save helper, which writes
-// the guide's item_status.json; a mark leaves pending only once the helper confirms it. pull() re-reads the file every
-// 5 seconds and redraws only when a mark changed, so marks the reader writes into the file show up without a reload
-// and without moving the map.
-const BRIDGE="http://127.0.0.1:47831/taken",GUIDE=OPT.guide,ART=OPT.artifact,LKEY=OPT.storageKey;
-let pending={},live=null;try{pending=JSON.parse(localStorage.getItem(LKEY)||"{}")||{}}catch(e){}
+// the guide's item_status.json; a mark leaves pending only once the helper confirms it. Every answer from the helper is
+// also kept in browser storage (saved), so a page reopened while the helper is not running still shows the confirmed
+// marks; the saved copy is used only when it is at least as new as the marks built into the page. pull() re-reads the
+// file every 5 seconds and redraws only when a mark changed, so marks the reader writes into the file show up without
+// a reload and without moving the map. The helper answers only with this run's token, which the launcher puts in the
+// page address (#bridge=...); opened any other way, the page keeps its marks in this browser until the launcher opens it.
+const BRIDGE="http://127.0.0.1:47831/taken",GUIDE=OPT.guide,ART=OPT.artifact,LKEY=OPT.storageKey,SKEY=LKEY+"-saved";
+const TOKEN=(/[#&]bridge=([0-9a-f]+)/.exec(location.hash)||[])[1]||"";
+let pending={},saved=null,live=null;try{pending=JSON.parse(localStorage.getItem(LKEY)||"{}")||{}}catch(e){}
+try{saved=JSON.parse(localStorage.getItem(SKEY)||"null")}catch(e){}
 function savePending(){try{localStorage.setItem(LKEY,JSON.stringify(pending))}catch(e){}}
+function keepSaved(j){saved={taken:j.taken||[],as_of:j.as_of||""};try{localStorage.setItem(SKEY,JSON.stringify(saved))}catch(e){}}
 function syncText(){const n=ITEMS.filter(i=>i.taken).length,w=Object.keys(pending).length;
- document.getElementById("sync").textContent=n+" taken - "+(live===null?"checking the save helper...":live?(w?"saving...":"saved to the guide"):"kept in this window only: the launcher's save helper is not running"+(w?" ("+w+" to send)":""))}
+ document.getElementById("sync").textContent=n+" taken - "+(!TOKEN?"kept in this browser: open the map from the artifact launcher to save marks to the guide"+(w?" ("+w+" to send)":""):live===null?"checking the save helper...":live?(w?"saving...":"saved to the guide"):"kept in this window only: the launcher's save helper is not running"+(w?" ("+w+" to send)":""))}
 function redraw(){draw();if(sel)pick(sel,false)}
 function toggle(i){i.taken=!i.taken;pending[i.id]=i.taken;savePending();redraw();syncText();push(i.id)}
-async function push(id){const v=pending[id];
- try{const r=await fetch(BRIDGE,{method:"POST",body:JSON.stringify({guide:GUIDE,artifact:ART,id:id,taken:v})}),j=await r.json();
-  if(!j.ok)throw new Error(j.error);if(pending[id]===v){delete pending[id];savePending()}live=true}catch(e){live=false}syncText()}
-async function pull(){
- try{const r=await fetch(BRIDGE+"?guide="+GUIDE+"&artifact="+ART,{cache:"no-store"}),j=await r.json();if(!j.ok)throw new Error(j.error);
-  const s=new Set(j.taken);live=true;let ch=false;
+async function push(id){const v=pending[id];if(!TOKEN)return;
+ try{const r=await fetch(BRIDGE,{method:"POST",body:JSON.stringify({guide:GUIDE,artifact:ART,id:id,taken:v,token:TOKEN})}),j=await r.json();
+  if(!j.ok)throw new Error(j.error);keepSaved(j);if(pending[id]===v){delete pending[id];savePending()}live=true}catch(e){live=false}syncText()}
+async function pull(){if(!TOKEN){syncText();return}
+ try{const r=await fetch(BRIDGE+"?guide="+GUIDE+"&artifact="+ART+"&token="+TOKEN,{cache:"no-store"}),j=await r.json();if(!j.ok)throw new Error(j.error);
+  const s=new Set(j.taken);keepSaved(j);live=true;let ch=false;
   ITEMS.forEach(i=>{const v=(i.id in pending)?pending[i.id]:s.has(i.id);if(v!==i.taken){i.taken=v;ch=true}});
   Object.keys(pending).forEach(push);if(ch)redraw()}catch(e){live=false}syncText()}
+if(saved&&Array.isArray(saved.taken)&&String(saved.as_of||"")>=String(OPT.asOf||"")){const s=new Set(saved.taken);ITEMS.forEach(i=>{i.taken=s.has(i.id)})}
 ITEMS.forEach(i=>{if(i.id in pending)i.taken=pending[i.id]});
 fit(START);drawList();syncText();pull();setInterval(pull,5000);
 </script></body></html>

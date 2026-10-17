@@ -8,19 +8,27 @@ selects it without marking it; a list tick box marks an item; with the config's 
 hidden place names stay out of the list. The test runs on a copy of the page whose save-helper address is unreachable,
 in a fresh browser profile, so the guide's item_status.json is never touched.
 
-    --bridge-port N --expect-id ID   instead talk to a save helper on port N (a test fixture, never the real guide):
-                                     after zooming, mark ID in that helper's file behind the page's back and check
-                                     the page shows it after its 5-second re-read while the map's zoom box stays
-                                     the same. ID must not be taken in the page or the fixture file at the start.
+    --bridge-port N --bridge-token T --expect-id ID
+                                     instead talk to a save helper on port N (a test fixture, never the real guide;
+                                     T is that helper's token, from its token file): after zooming, mark ID in that
+                                     helper's file behind the page's back and check the page shows it after its
+                                     5-second re-read while the map's zoom box stays the same. ID must not be taken
+                                     in the page or the fixture file at the start.
+Without --bridge-port the test also checks an offline reopen: a mark confirmed by a stand-in helper (a stub on a
+spare local port, never the real one) is still shown when the page is opened again, in the same browser profile, with
+no helper running.
 Exit 0 = all pass.
 """
 import argparse
+import http.server
 import json
 import os
 import re
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 from pathlib import Path
 
 BROWSERS = [
@@ -47,7 +55,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   // Stand-in for the reader marking an item during play: the status file changes behind the page's back (through
   // the helper, as a plain request the page knows nothing about), after the zoom box is recorded.
   const vb0=svg.getAttribute('viewBox'),it=ITEMS.find(i=>i.id===T.expectId);R.expectBefore=it.taken;
-  await fetch(T.bridge,{method:"POST",body:JSON.stringify({guide:OPT.guide,artifact:OPT.artifact,id:T.expectId,taken:true})});
+  await fetch(T.bridge,{method:"POST",body:JSON.stringify({guide:OPT.guide,artifact:OPT.artifact,id:T.expectId,taken:true,token:T.token})});
   await wait(7000);R.expectAfter=it.taken;R.vbSame=svg.getAttribute('viewBox')===vb0;R.sync=document.getElementById('sync').textContent;
   document.body.setAttribute('data-test',JSON.stringify(R));return}
  const rows=document.querySelectorAll('#list .row');rows[Math.min(25,rows.length-1)].click();await wait(120);R.afterRowClick=A.scrollTop;
@@ -68,6 +76,91 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 </script></body>"""
 
 
+REOPEN_JS = r"""
+<script>
+setTimeout(()=>{(async()=>{try{
+ const T=__TESTCFG__,wait=ms=>new Promise(r=>setTimeout(r,ms)),R={};
+ if(T.phase==="mark"){const it=ITEMS.find(i=>!i.taken);R.id=it.id;toggle(it);await wait(1500);
+  R.pendingLeft=Object.keys(JSON.parse(localStorage.getItem(LKEY)||"{}")).length;R.taken=it.taken}
+ else{const it=ITEMS.find(i=>i.id===T.id);R.taken=it.taken;R.pendingLeft=Object.keys(JSON.parse(localStorage.getItem(LKEY)||"{}")).length;
+  R.sync=document.getElementById('sync').textContent;R.count=ITEMS.filter(i=>i.taken).length}
+ document.body.setAttribute('data-test',JSON.stringify(R));
+}catch(e){document.body.setAttribute('data-test',JSON.stringify({error:String(e)}))}})()},600);
+</script></body>"""
+
+
+class _Stub(http.server.BaseHTTPRequestHandler):
+    """Stands in for the save helper: confirms every mark and answers reads, writing nothing anywhere."""
+    taken = set()
+
+    def _send(self, body):
+        data = json.dumps(body).encode()
+        self.send_response(200)
+        for k, v in (("Access-Control-Allow-Origin", "*"), ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+                     ("Access-Control-Allow-Headers", "Content-Type"), ("Access-Control-Allow-Private-Network", "true"),
+                     ("Content-Type", "application/json")):
+            self.send_header(k, v)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_OPTIONS(self):
+        self._send({"ok": True})
+
+    def do_GET(self):
+        self._send({"ok": True, "taken": sorted(self.taken), "as_of": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())})
+
+    def do_POST(self):
+        b = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+        (self.taken.add if b.get("taken") is True else self.taken.discard)(b.get("id"))
+        self.do_GET()
+
+    def log_message(self, *a):
+        pass
+
+
+def dump(exe, uri, prof, budget):
+    r = subprocess.run([exe, "--headless=new", "--disable-gpu", "--window-size=1400,900", "--virtual-time-budget=" + budget,
+                        "--user-data-dir=" + str(prof), "--dump-dom", uri],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+    m = re.search(r"data-test='([^']*)'|data-test=\"([^\"]*)\"", r.stdout)
+    return json.loads((m.group(1) or m.group(2)).replace("&quot;", '"')) if m else {"error": "no test result"}
+
+
+def offline_reopen(exe, src, check):
+    """Mark one item with a stub helper confirming it, then reopen the same page, same profile, with no helper."""
+    m = re.search(r"^const ITEMS=(.*);$", src, re.M)
+    baked = {i["id"] for i in json.loads(m.group(1)) if i.get("taken")} if m else set()
+    _Stub.taken = set(baked)   # the stand-in's file starts as the page was built, like the real one
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Stub)
+    th = threading.Thread(target=srv.serve_forever, daemon=True)
+    th.start()
+    try:
+        with tempfile.TemporaryDirectory() as d:
+            t, prof = Path(d) / "reopen.html", Path(d) / "prof"
+            stub = src.replace("http://127.0.0.1:9/taken", "http://127.0.0.1:%d/taken" % srv.server_address[1])
+            t.write_text(stub.replace("</body>", REOPEN_JS.replace("__TESTCFG__", json.dumps({"phase": "mark"})), 1), encoding="utf-8")
+            R1 = dump(exe, t.as_uri() + "#bridge=" + "0" * 48, prof, "8000")
+            if "error" in R1:
+                check("offline reopen: marking step ran", False, R1["error"])
+                return
+            check("offline reopen: the stand-in helper confirmed the mark", R1["taken"] is True and R1["pendingLeft"] == 0,
+                  "pending left %s" % R1["pendingLeft"])
+            srv.shutdown()
+            t.write_text(src.replace("</body>", REOPEN_JS.replace("__TESTCFG__", json.dumps({"phase": "reopen", "id": R1["id"]})), 1),
+                         encoding="utf-8")
+            R2 = dump(exe, t.as_uri(), prof, "4000")
+            if "error" in R2:
+                check("offline reopen: reopen step ran", False, R2["error"])
+                return
+            check("offline reopen: a confirmed mark still shows with no helper running", R2["taken"] is True,
+                  "%s, pending %s, %s" % (R1["id"], R2["pendingLeft"], R2.get("sync", "")))
+            check("offline reopen: the marks built into the page are kept too", R2.get("count") == len(baked) + 1,
+                  "%s taken, %d built in + 1" % (R2.get("count"), len(baked)))
+    finally:
+        srv.server_close()
+
+
 def browser():
     for b in BROWSERS:
         if Path(b).exists():
@@ -80,12 +173,13 @@ def main():
     ap.add_argument("page")
     ap.add_argument("--config")
     ap.add_argument("--bridge-port", type=int)
+    ap.add_argument("--bridge-token", default="")
     ap.add_argument("--expect-id")
     a = ap.parse_args()
     page = Path(a.page).resolve()
     tcfg = json.load(open(a.config, encoding="utf-8")).get("test", {}) if a.config else {}
     if a.expect_id:
-        tcfg = dict(tcfg, expectId=a.expect_id, bridge="http://127.0.0.1:%d/taken" % a.bridge_port)
+        tcfg = dict(tcfg, expectId=a.expect_id, bridge="http://127.0.0.1:%d/taken" % a.bridge_port, token=a.bridge_token)
     exe = browser()
     if not exe:
         print("FAIL: no Edge or Chrome found")
@@ -100,13 +194,15 @@ def main():
     port = a.bridge_port or 9   # port 9 = nothing listens, so the page's marks never leave it
     src = src.replace("http://127.0.0.1:47831/taken", "http://127.0.0.1:%d/taken" % port)
     src = src.replace("LKEY=OPT.storageKey", 'LKEY=OPT.storageKey+"-TEST"')
+    base_src = src
     src = src.replace("</body>", JS.replace("__TESTCFG__", json.dumps(tcfg)), 1)
     budget = "20000" if a.expect_id else "8000"
     with tempfile.TemporaryDirectory() as d:
         t = Path(d) / "t.html"
         t.write_text(src, encoding="utf-8")
+        uri = t.as_uri() + ("#bridge=" + a.bridge_token if a.bridge_token else "")
         r = subprocess.run([exe, "--headless=new", "--disable-gpu", "--window-size=1400,900", "--virtual-time-budget=" + budget,
-                            "--user-data-dir=" + str(Path(d) / "prof"), "--dump-dom", t.as_uri()],
+                            "--user-data-dir=" + str(Path(d) / "prof"), "--dump-dom", uri],
                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     m = re.search(r"data-test='([^']*)'|data-test=\"([^\"]*)\"", r.stdout)
     if not m:
@@ -144,6 +240,7 @@ def main():
             check("folded spoiler words stay out of the list", not R["foldedShown"], str(R["foldedShown"]))
         if tcfg.get("min_nopos_rows"):
             check("items without a map spot are listed", R["noPosRows"] >= tcfg["min_nopos_rows"], "%s rows, %s dots" % (R["noPosRows"], R["dots"]))
+        offline_reopen(exe, base_src, check)
     print("ALL PASS" if ok else "SOME FAILED")
     return 0 if ok else 1
 

@@ -64,16 +64,49 @@ if (-not $browser) {
 }
 if (-not $browser) { throw 'Could not find Chrome or Edge. Open index.html in any browser instead.' }
 
-Start-Process -FilePath $browser -ArgumentList "--app=$fileUrl", "--window-size=$WindowSize"
+# The launcher runs in its own browser profile, so the save helper can tell when THIS
+# window has closed: it looks for a browser process using this folder. A window opened
+# into an already-running everyday browser would leave no such process to find.
+$stateDir = Join-Path $env:LOCALAPPDATA 'HintforgeArtifactLauncher'
+$profileDir = Join-Path $stateDir 'browser-profile'
+New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
 
 # The save helper: lets a page whose guide declares "writes_state" in artifacts/artifacts.json
-# save "taken" marks back into that guide. A second launch finds it running and leaves it be.
+# save "taken" marks back into that guide. It starts first because it makes this run's
+# token, which the page must send with every request; the launcher page gets the token in
+# its address and hands it only to artifacts that write state. A second launch finds the
+# helper running and reuses its token.
+$token = ''
 if (-not $NoBridge) {
-    $bridge = Join-Path $here 'state_bridge.ps1'
-    $conhost = Join-Path $env:SystemRoot 'System32\conhost.exe'
-    $ps = (Get-Command powershell.exe -ErrorAction Stop).Source
-    Start-Process -FilePath $conhost -ArgumentList @(
-        '--headless', ('"{0}"' -f $ps), '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-WindowStyle', 'Hidden', '-File', ('"{0}"' -f $bridge)
-    ) -WindowStyle Hidden
+    $tokenFile = Join-Path $stateDir 'bridge_token.txt'
+    $existing = $null
+    if ([System.Threading.Mutex]::TryOpenExisting('Local\HintforgeArtifactLauncherBridge47831', [ref]$existing)) {
+        $existing.Dispose()
+    } else {
+        # No helper is running, so any token file is left over from one that did not exit cleanly.
+        Remove-Item -LiteralPath $tokenFile -Force -ErrorAction SilentlyContinue
+        $bridge = Join-Path $here 'state_bridge.ps1'
+        $conhost = Join-Path $env:SystemRoot 'System32\conhost.exe'
+        $ps = (Get-Command powershell.exe -ErrorAction Stop).Source
+        Start-Process -FilePath $conhost -ArgumentList @(
+            '--headless', ('"{0}"' -f $ps), '-NoProfile', '-ExecutionPolicy', 'Bypass',
+            '-WindowStyle', 'Hidden', '-File', ('"{0}"' -f $bridge), '-ProfileDir', ('"{0}"' -f $profileDir)
+        ) -WindowStyle Hidden
+    }
+    for ($i = 0; $i -lt 50 -and -not (Test-Path -LiteralPath $tokenFile); $i++) { Start-Sleep -Milliseconds 100 }
+    if (Test-Path -LiteralPath $tokenFile) { $token = ([System.IO.File]::ReadAllText($tokenFile)).Trim() }
+    else { Write-Warning 'The save helper did not start; marks stay in the browser until it runs.' }
 }
+$pageUrl = if ($token -match '^[0-9a-f]+$') { $fileUrl + '?bridge=' + $token } else { $fileUrl }
+
+$browserArgs = @(
+    "--user-data-dir=$profileDir",
+    '--no-first-run',
+    '--no-default-browser-check',
+    "--app=$pageUrl",
+    "--window-size=$WindowSize"
+)
+# Start-Process joins an argument array with spaces and does not quote, so any
+# argument holding a space (the profile path can) is quoted here.
+$quoted = $browserArgs | ForEach-Object { if ($_ -match ' ') { '"' + $_ + '"' } else { $_ } }
+Start-Process -FilePath $browser -ArgumentList $quoted

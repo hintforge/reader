@@ -4,6 +4,15 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Save helper hardening and collectible map fixes (framework v112)
+
+- The save helper (`tools/artifact-launcher/state_bridge.ps1`) makes a random token each time it starts and refuses any request without it. A file page's `Origin: null` is no longer enough, since a sandboxed frame on any web page sends the same value. The launcher starts the helper first, opens the launcher page with the token, and the launcher page passes it only to artifacts whose guide declares `"writes_state"`. A map opened any other way keeps its marks in the browser and says so.
+- The helper accepts only a JSON `true` or `false` for `taken`; the string `"false"`, `null` or a missing value is refused instead of being read as a mark.
+- The launcher runs in its own browser profile and hands it to the helper, so the helper exits when the launcher window closes instead of running for 24 hours. New `test_state_bridge.ps1` checks the token, the `taken` type and the exit on close against a throwaway guide.
+- The collectible map keeps the helper's last confirmed marks in browser storage, so a map reopened while the helper is not running still shows them (used only when at least as new as the marks built into the page). `test_map.py` checks this offline reopen and takes `--bridge-token` for its live re-read mode.
+- `item_codes.py`: a `lng`/`lat` catalog item with no position gets a code and a list row instead of stopping the build, as `catalog_schema.md` promised; new `test_item_codes.py`.
+- A reported pickup is saved to `item_status.json` without a commit; git stays the player's.
+
 ### Live collectible map tool (framework v111)
 
 - New `tools/collectible-map/`: `build_map.py` builds a guide's `artifacts/full_map.html` from its `extract_tools/` catalog, status and config files; `item_codes.py` gives every item a short code (letter + number); `test_map.py` checks the page in a headless browser (list keeps its scroll through zoom, dot click selects without marking, list tick marks); `catalog_schema.md` documents the fields; `fetch_tiles.py` assembles a base picture from map tiles when a guide has none.

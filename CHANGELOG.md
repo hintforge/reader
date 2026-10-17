@@ -4,6 +4,14 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Web findings are saved and read back; game-window screenshots (framework v109)
+
+- Saving a source-supported web finding is now required. After the chat answer, the reader writes the finding to its topic file in the corpus's claim format, then reads the file back and confirms the fact, source, confidence and spoiler tags are all there. A new `persistence.md` holds the procedure. Turn priority no longer calls saving optional: a long turn may defer a save but not drop it, and the close reconciles every finding used.
+- A save that cannot complete is reported in one sentence and recorded as an `Unsaved finding:` entry in `CHECKPOINT.md` Open threads, worded without gated detail; the next session reconciles it after the current question. "Don't save this" leaves no fact and no entry. Empty or contradictory searches still go to `limitations.md`.
+- New Windows-only screenshot tool in `tools/screenshot/`: `capture.ps1` copies the game's window through a one-time task in the player's desktop session with a hidden console, refuses a missing, minimized or all-black window instead of returning the desktop, and lists candidate windows; `markup.ps1` circles and labels spots. Setup in `docs/screenshot.md`.
+- Screenshots happen only when the player asks. The game's program name is found on the first request and saved to `CHECKPOINT.md` `game_window_process:`; the player is asked once only when several windows could be the game. Markup happens on request or when a report names a spot.
+- Corpus versions 1-6 remain supported; no format change.
+
 ### Session-close ref line and current capture values (framework v107)
 
 - When the guide folder is under git, the reader's CHECKPOINT close ends with one `HF-CLOSE-REF {...}` line: branch, commit and a count of uncommitted files, never file names. The reader never commits, stashes or switches branches to produce it; a folder without git emits nothing.

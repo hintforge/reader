@@ -63,6 +63,10 @@ pwsh -File .agents/skills/hintforge-reader/tools/artifact-launcher/launch.ps1
 
 Full setup, the optional desktop shortcut and the key bindings: [`docs/artifact-launcher.md`](docs/artifact-launcher.md).
 
+## Screenshots (Windows only)
+
+Say "ss" or "screenshot" and the reader takes a screenshot of your game's window, with no console box drawn over it, and can circle and label the spot you ask about. It never takes one unless you ask. Setup and troubleshooting: [`docs/screenshot.md`](docs/screenshot.md).
+
 ## Two habits that make sessions faster
 
 The reader is designed for low-friction session entry, but two small habits on your side keep it that way:

@@ -17,6 +17,7 @@ Everything else is **untested but designed to be portable** -- markdown core wor
 
 - **TTS / read-aloud** is Windows SAPI + edge-tts only today. Mac (`say`) and Linux (`piper` / `espeak`) variants are roadmap.
 - **PTT** assumes AutoHotkey, which is Windows-only. Mac/Linux users skip the module.
+- **Screenshots** (`tools/screenshot/`) are Windows-only. Mac/Linux are not supported yet.
 - **Save-watcher default paths** only enumerated for Windows. Mac (`~/Library/Application Support/...`) and Linux (`~/.local/share/...` or Proton compat-data) need per-game research; setup wizard accepts a custom path.
 - **PowerShell snippets** in some scripts (timestamp generation, file sanity checks). Trivial to translate to bash but unwritten.
 - **No installer wrapper yet** -- setup runs via the natural-language paste prompt in the README.

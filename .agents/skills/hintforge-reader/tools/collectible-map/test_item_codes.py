@@ -1,10 +1,11 @@
-"""Unit checks for item_codes.py that need no browser. Run after any change to item_codes.py:
+"""Unit checks for item_codes.py and build_map.py that need no browser. Run after any change to either:
 
     python test_item_codes.py
 
 Builds a tiny throwaway guide in a temporary folder. Exit 0 = all pass.
 """
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -58,6 +59,22 @@ def main():
             check(label + ": the positioned item keeps its spot", by.get("src:1", {}).get("x") is not None)
             check(label + ": an item with no position has no map spot",
                   all(by.get(k, {}).get("x", 0) is None and by.get(k, {}).get("y", 0) is None for k in ("src:2", "src:3")))
+
+    # A catalog where no item has a position still builds a page: a view fitted to the items falls back to the picture.
+    import build_map  # noqa: E402
+    with tempfile.TemporaryDirectory() as d:
+        cfg = guide(d, {"kind": "lnglat", "x": "lng", "y": "lat"}, entries[1:])
+        cfg.update(image={"file": "artifacts/map.png", "size": [800, 600]},
+                   views=[{"label": "All", "box": {"items_pad": 20}}], out="artifacts/full_map.html")
+        try:
+            page = build_map.build(cfg, Path(d) / "artifacts" / "full_map.html")
+            html = Path(page).read_text(encoding="utf-8")
+            check("no positioned item: the page builds", True)
+            m = re.search(r"\bVIEWS=(\[.*?\]), START=", html)
+            check("no positioned item: the items view falls back to the whole picture",
+                  m is not None and json.loads(m.group(1))[0]["box"] == [0, 0, 800, 600], m.group(1) if m else "no VIEWS line")
+        except Exception as e:  # noqa: BLE001 -- a crash is the failure being tested
+            check("no positioned item: the page builds", False, "%s: %s" % (type(e).__name__, e))
     print("ALL PASS" if ok else "SOME FAILED")
     return 0 if ok else 1
 

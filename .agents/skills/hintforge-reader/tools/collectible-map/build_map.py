@@ -87,6 +87,8 @@ def view_box(cfg, spec, grid, data, size):
         p = spec["items_pad"]
         xs = [d["x"] for d in data if d["x"] is not None]
         ys = [d["y"] for d in data if d["y"] is not None]
+        if not xs or not ys:   # no item has a map spot yet: show the whole picture
+            return [0, 0, size[0], size[1]]
         return [min(xs) - p, min(ys) - p, max(xs) - min(xs) + 2 * p, max(ys) - min(ys) + 2 * p]
     x0, y0, x1, y1 = spec["coords"]
     a, b = ic.to_px(cfg, x0, y0)

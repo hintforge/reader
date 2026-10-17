@@ -160,7 +160,8 @@ let touched=false;svg.addEventListener("wheel",()=>touched=true);svg.addEventLis
 // marks; the saved copy is used only when it is at least as new as the marks built into the page. pull() re-reads the
 // file every 5 seconds and redraws only when a mark changed, so marks the reader writes into the file show up without
 // a reload and without moving the map. The helper answers only with this run's token, which the launcher puts in the
-// page address (#bridge=...); opened any other way, the page keeps its marks in this browser until the launcher opens it.
+// page address (#bridge=...). Opened any other way, the page keeps its marks in this browser only and says so: the
+// launcher runs in its own browser profile, so it never sees them, and the player ticks them again inside the launcher.
 const BRIDGE="http://127.0.0.1:47831/taken",GUIDE=OPT.guide,ART=OPT.artifact,LKEY=OPT.storageKey,SKEY=LKEY+"-saved";
 const TOKEN=(/[#&]bridge=([0-9a-f]+)/.exec(location.hash)||[])[1]||"";
 let pending={},saved=null,live=null;try{pending=JSON.parse(localStorage.getItem(LKEY)||"{}")||{}}catch(e){}
@@ -168,7 +169,7 @@ try{saved=JSON.parse(localStorage.getItem(SKEY)||"null")}catch(e){}
 function savePending(){try{localStorage.setItem(LKEY,JSON.stringify(pending))}catch(e){}}
 function keepSaved(j){saved={taken:j.taken||[],as_of:j.as_of||""};try{localStorage.setItem(SKEY,JSON.stringify(saved))}catch(e){}}
 function syncText(){const n=ITEMS.filter(i=>i.taken).length,w=Object.keys(pending).length;
- document.getElementById("sync").textContent=n+" taken - "+(!TOKEN?"kept in this browser: open the map from the artifact launcher to save marks to the guide"+(w?" ("+w+" to send)":""):live===null?"checking the save helper...":live?(w?"saving...":"saved to the guide"):"kept in this window only: the launcher's save helper is not running"+(w?" ("+w+" to send)":""))}
+ document.getElementById("sync").textContent=n+" taken - "+(!TOKEN?"marks made here stay in this browser only"+(w?" ("+w+" not saved to the guide)":"")+". To save marks to the guide, open the map from the artifact launcher and tick them again there.":live===null?"checking the save helper...":live?(w?"saving...":"saved to the guide"):"kept in this window only: the launcher's save helper is not running"+(w?" ("+w+" to send)":""))}
 function redraw(){draw();if(sel)pick(sel,false)}
 function toggle(i){i.taken=!i.taken;pending[i.id]=i.taken;savePending();redraw();syncText();push(i.id)}
 async function push(id){const v=pending[id];if(!TOKEN)return;

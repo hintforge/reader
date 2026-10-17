@@ -67,6 +67,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
  R.dotSelected=document.getElementById('detail').textContent.includes(it.code);R.dotNotMarked=!it.taken;
  const row=[...document.querySelectorAll('#list .row')].find(r=>!r.querySelector('.tk').checked);const code=row.querySelector('.code').textContent;
  row.querySelector('.tk').click();await wait(80);R.tickMarked=ITEMS.find(i=>i.code===code).taken===true;
+ R.sync=document.getElementById('sync').textContent;
  const listText=document.getElementById('list').textContent;
  R.hiddenShown=(T.hidden_words||[]).filter(w=>listText.includes(w));
  R.foldedShown=(T.folded_words||[]).filter(w=>listText.includes(w));
@@ -234,6 +235,11 @@ def main():
         check("clicking a dot selects it", R["dotSelected"])
         check("clicking a dot does not mark it", R["dotNotMarked"])
         check("a list tick box marks the item", R["tickMarked"])
+        # Opened without the launcher (as here), the page must not promise that the launcher will pick these marks
+        # up: the launcher runs in its own browser profile and never sees this browser's storage.
+        s = R.get("sync", "")
+        check("opened outside the launcher, the page says its marks stay in this browser and must be ticked again there",
+              "this browser only" in s and "tick them again" in s, s)
         if tcfg.get("hidden_words"):
             check("hidden place names stay out of the list", not R["hiddenShown"], str(R["hiddenShown"]))
         if tcfg.get("folded_words"):

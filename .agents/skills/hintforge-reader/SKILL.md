@@ -109,7 +109,7 @@ These bound the universal-core contract (the four universal directories, the uni
 | 1 | Skip later fields when absent; follow normal topic routing. |
 | 2 | Parse `capture-method` silently; never recite audit metadata. |
 | 3 | Read game-version fields only when needed. A player-declared patch/platform change adds a caveat to version-sensitive answers; never update the manifest. |
-| 4 | Start achievement queries at `achievements.md`, follow `vector-binding`, and gate hidden headings below progression tier unless explicitly unlocked. |
+| 4 | Start achievement queries at `achievements.md`, follow `vector-binding`, and gate hidden (`yes` or `unknown`) headings below progression tier unless explicitly unlocked. |
 | 5 | Start named-entity queries at their class file, including named hostile NPCs. Follow combat pointers only for requested detail; gate hidden names. Read unmigrated v4 `enemies/` files normally. |
 | 6 | Treat `CLAUDE.md` / `AGENTS.md` as optional shims; use neutral corpus files for rules and detection. |
 

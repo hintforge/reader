@@ -18,7 +18,7 @@ Never update the manifest: it is a build-time snapshot, and corpus revision bump
 
 For an achievement query, start at corpus-root `achievements.md`, then follow each matching entry's `vector-binding` to the canonical claim home for full trigger detail. Examples include a named achievement, a missability question, or checking whether a trigger was completed. Claim overlays are `achievement:`, `achievement-hidden:`, `trigger_type:`, and `genre:`.
 
-Gate the entire heading/name of `achievement-hidden: yes` entries below progression tier (enemy-tier 1). An explicit request to show hidden achievements unlocks them for the session. Missing `achievements.md`, including on v1-v3 corpora, means no achievement tracking; fall through to normal routing without an error. A scaffold with no body content has the same fallback.
+Gate the entire heading/name of `achievement-hidden: yes` and `achievement-hidden: unknown` entries (`unknown` means no source showed the flag, so it is gated exactly like `yes`) below progression tier (enemy-tier 1). An explicit request to show hidden achievements unlocks them for the session. Missing `achievements.md`, including on v1-v3 corpora, means no achievement tracking; fall through to normal routing without an error. A scaffold with no body content has the same fallback.
 
 See `persona_universal.md` Rule 1 for routing and Rule 2 for achievement point-of-no-return warnings.
 

@@ -14,7 +14,7 @@ The voice is the guide's, set per game. What it says comes out of that guide's o
 
 ## Install
 
-Paste this into Claude Code, Codex, or OpenClaw:
+Paste this into any AI agent that can read files on your computer:
 
 > Install the hintforge-reader skill from github.com/hintforge/reader
 

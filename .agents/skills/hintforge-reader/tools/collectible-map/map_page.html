@@ -180,7 +180,7 @@ async function push(id){const v=pending[id];if(!TOKEN)return;
   if(wrongRun(j))return;if(!j.ok)throw new Error(j.error);keepSaved(j);if(pending[id]===v){delete pending[id];savePending()}live=true}catch(e){live=false}syncText()}
 function wrongRun(j){if(j&&j.error==="run mismatch"){otherRun=String(j.run||"");live=false;syncText();return true}otherRun=null;return false}
 async function pull(){if(!TOKEN){syncText();return}
- try{const r=await fetch(BRIDGE+"?guide="+GUIDE+"&artifact="+ART+"&token="+TOKEN+"&run="+encodeURIComponent(RUN),{cache:"no-store"}),j=await r.json();if(wrongRun(j))return;if(!j.ok)throw new Error(j.error);
+ try{const r=await fetch(BRIDGE+"?guide="+GUIDE+"&artifact="+encodeURIComponent(ART)+"&token="+TOKEN+"&run="+encodeURIComponent(RUN),{cache:"no-store"}),j=await r.json();if(wrongRun(j))return;if(!j.ok)throw new Error(j.error);
   const s=new Set(j.taken);keepSaved(j);live=true;let ch=false;
   ITEMS.forEach(i=>{const v=(i.id in pending)?pending[i.id]:s.has(i.id);if(v!==i.taken){i.taken=v;ch=true}});
   Object.keys(pending).forEach(push);if(ch)redraw()}catch(e){live=false}syncText()}

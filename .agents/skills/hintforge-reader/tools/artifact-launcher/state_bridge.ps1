@@ -136,7 +136,10 @@ function Resolve-StateFile([string]$guide, [string]$artifact) {
     # older page sends only its file name, which counts when exactly one page in the
     # guide has that name. A declaration matches the same way as in build_index.ps1:
     # by full path, or by a bare file name that only one page has.
-    if ($guide -notmatch '^[A-Za-z0-9_-]+$' -or $artifact -notmatch '^[A-Za-z0-9_./-]+\.html$') { return $null }
+    # Any page path build_index.ps1 can list is allowed (spaces, accents, brackets); what guards the
+    # helper is that the path must resolve, inside artifacts/, to a page that exists and is declared.
+    if ($guide -notmatch '^[A-Za-z0-9_-]+$' -or $artifact.Length -gt 260 -or $artifact -notmatch '\.html$' -or
+        $artifact -match '[\x00-\x1f:*?"<>|]') { return $null }
     $guideDir = Join-Path $GuidesRoot $guide
     $artDir = Join-Path $guideDir 'artifacts'
     $manifest = Join-Path $artDir 'artifacts.json'
@@ -235,10 +238,18 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
     if ($req.Url.AbsolutePath -ne '/taken') { Send $ctx 404 @{ ok = $false; error = 'not found' }; return }
 
     if ($req.HttpMethod -eq 'GET') {
-        if (-not (Test-Token $req.QueryString['token'])) { Send $ctx 403 @{ ok = $false; error = 'bad token' }; return }
-        $path = Resolve-StateFile $req.QueryString['guide'] $req.QueryString['artifact']
+        # The query is decoded here as UTF-8, as the page encodes it; Windows PowerShell 5.1's
+        # QueryString uses the system code page and garbles an accented page path.
+        $q = @{}
+        foreach ($pair in ((@($req.RawUrl -split '\?', 2) + '')[1] -split '&')) {
+            if (-not $pair) { continue }
+            $kv = $pair -split '=', 2
+            $q[[System.Uri]::UnescapeDataString(($kv[0] -replace '\+', ' '))] = if ($kv.Count -gt 1) { [System.Uri]::UnescapeDataString(($kv[1] -replace '\+', ' ')) } else { '' }
+        }
+        if (-not (Test-Token $q['token'])) { Send $ctx 403 @{ ok = $false; error = 'bad token' }; return }
+        $path = Resolve-StateFile $q['guide'] $q['artifact']
         if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'artifact not allowed' }; return }
-        if (-not (Test-Run $ctx $req.QueryString['guide'] $req.QueryString['run'])) { return }
+        if (-not (Test-Run $ctx $q['guide'] $q['run'])) { return }
         $st = Read-State $path
         Send $ctx 200 @{ ok = $true; taken = @($st.taken); as_of = $st.as_of }
         return

@@ -47,7 +47,8 @@ function Call([string]$method, [string]$url, [string]$body, [string]$origin) {
     if ($origin) { $h['Origin'] = $origin }
     try {
         if ($method -eq 'GET') { $r = Invoke-WebRequest -UseBasicParsing -Method GET -Uri $url -Headers $h -TimeoutSec 10 }
-        else { $r = Invoke-WebRequest -UseBasicParsing -Method POST -Uri $url -Headers $h -Body $body -ContentType 'text/plain' -TimeoutSec 10 }
+        # Sent as UTF-8 bytes, as a browser sends it, whatever the shell's default body encoding.
+        else { $r = Invoke-WebRequest -UseBasicParsing -Method POST -Uri $url -Headers $h -Body ([System.Text.Encoding]::UTF8.GetBytes($body)) -ContentType 'text/plain; charset=utf-8' -TimeoutSec 10 }
         return @{ Code = [int]$r.StatusCode; Text = $r.Content }
     } catch {
         $resp = $_.Exception.Response
@@ -141,6 +142,24 @@ try {
     Check 'an undeclared same-named page is refused' ($r.Code -eq 400) "HTTP $($r.Code)"
     $r = Post @{ guide = 'test_guide'; artifact = 'maps/full_map.html'; id = 'src:13'; taken = $true; token = $token; run = 'Rebels' }
     Check 'the declared nested page still saves beside a same-named page' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:13') "HTTP $($r.Code)"
+
+    # A declared page whose path has a space and an accented letter saves too, as the launcher lists it.
+    $odd = 'maps/Act 1/carte-' + [char]0x00E9 + '.html'
+    New-Item -ItemType Directory -Force -Path (Join-Path $guideDir 'artifacts\maps\Act 1') | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $guideDir ('artifacts\' + ($odd -replace '/', '\'))), '<!doctype html><title>t</title>', $utf8)
+    $manJson = '[{"file":"map.html","writes_state":"extract_tools/item_status.json"},{"file":"maps/full_map.html","writes_state":"extract_tools/nested_status.json"},{"file":"' + $odd + '","writes_state":"extract_tools/nested_status.json"}]'
+    [System.IO.File]::WriteAllText((Join-Path $guideDir 'artifacts\artifacts.json'), $manJson, $utf8)
+    $r = Post @{ guide = 'test_guide'; artifact = $odd; id = 'src:14'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'a declared page with a space and an accent in its path saves' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:14') "HTTP $($r.Code)"
+    $r = Call 'GET' ("$base`?guide=test_guide&artifact=" + [uri]::EscapeDataString($odd) + "&token=$token&run=Rebels") '' 'null'
+    Check 'a read for that page works' ($r.Code -eq 200 -and $r.Text -match 'src:14') "HTTP $($r.Code)"
+
+    # While the reader switches runs it sets run: to "(switching)", a value no run name can take, so a
+    # page of any run is refused until the switch is done.
+    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: (switching)`n", $utf8)
+    $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:15'; taken = $true; token = $token; run = 'Rebels' }
+    $r2 = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:15'; taken = $true; token = $token }
+    Check 'during a run switch every page is refused' ($r.Code -eq 409 -and $r2.Code -eq 409 -and -not ((Taken) -contains 'src:15')) "HTTP $($r.Code) / $($r2.Code)"
 
     $launch = Get-Content -LiteralPath (Join-Path $here 'launch.ps1') -Raw
     Check 'launch.ps1 opens its own browser profile and hands it to the helper' (($launch -match '--user-data-dir=') -and ($launch -match "'-ProfileDir'")) ''

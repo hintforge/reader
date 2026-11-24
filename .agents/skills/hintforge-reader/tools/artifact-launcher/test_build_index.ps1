@@ -39,6 +39,8 @@ try {
     New-Guide 'g_ambig' '[{"file":"full_map.html","writes_state":"a.json"}]' @('maps\full_map.html', 'old\full_map.html')
     New-Guide 'g_dots' '[{"file":"artifacts/./maps/../maps/full_map.html","writes_state":"a.json"}]' @('maps\full_map.html')
     New-Guide 'g_root' '[{"file":"full_map.html","writes_state":"a.json"}]' @('full_map.html', 'notes.html')
+    $odd = 'carte-' + [char]0x00E9 + '.html'
+    New-Guide 'g_odd' ('[{"file":"maps/Act 1/' + $odd + '","writes_state":"a.json"}]') @(('maps\Act 1\' + $odd))
 
     $out = Join-Path $root 'index.html'
     $warn = & (Join-Path $here 'build_index.ps1') -GuidesRoot $root -OutFile $out -Quiet 3>&1 | ForEach-Object { [string]$_ }
@@ -54,6 +56,7 @@ try {
     Check 'bare-name declaration, two pages with that name: neither gets the key' (-not $w['g_ambig/artifacts/maps/full_map.html'] -and -not $w['g_ambig/artifacts/old/full_map.html']) ''
     Check 'ambiguous bare-name declaration is warned about' ([bool]($warn | Where-Object { $_ -match 'g_ambig' -and $_ -match '2 pages' })) ($warn -join ' | ')
     Check 'dot segments in a declaration are resolved' ($w['g_dots/artifacts/maps/full_map.html']) ''
+    Check 'a declared path with a space and an accent gets the key' ($w['g_odd/artifacts/maps/Act 1/' + $odd]) (($w.Keys | Where-Object { $_ -like 'g_odd*' }) -join ',')
     Check 'bare-name declaration for a page in artifacts/ itself: key, other page none' ($w['g_root/artifacts/full_map.html'] -and -not $w['g_root/artifacts/notes.html']) ''
 } catch {
     Check 'test ran' $false $_.Exception.Message

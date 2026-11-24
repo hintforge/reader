@@ -92,6 +92,10 @@ def main():
         o = opt_of(Path(build_map.build(cfg, out)).read_text(encoding="utf-8"))
         check("run line: page carries the run and a per-run storage key",
               o.get("run") == "Rebels" and o.get("storageKey") == "test@run:Rebels", "%s / %s" % (o.get("run"), o.get("storageKey")))
+        # The save helper is told the page's path under artifacts/, the name its manifest entry declares.
+        check("page directly in artifacts/ names itself by file name", o.get("artifact") == "full_map.html", str(o.get("artifact")))
+        o = opt_of(Path(build_map.build(cfg, Path(d) / "artifacts" / "maps" / "full_map.html")).read_text(encoding="utf-8"))
+        check("page in a subfolder names itself by its path under artifacts/", o.get("artifact") == "maps/full_map.html", str(o.get("artifact")))
     print("ALL PASS" if ok else "SOME FAILED")
     return 0 if ok else 1
 

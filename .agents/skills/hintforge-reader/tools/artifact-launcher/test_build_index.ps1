@@ -1,6 +1,8 @@
 # test_build_index.ps1 -- checks which pages build_index.ps1 hands the save key ("writes").
 #
 #   powershell -NoProfile -File test_build_index.ps1
+#   pwsh -NoProfile -File test_build_index.ps1     (run under both: most fixtures are one-entry
+#                                                   manifests, which PowerShell 7 parses differently)
 #
 # Builds throwaway guides in a temporary folder and an index of them (never the real
 # guides or the real index.html). Checks:

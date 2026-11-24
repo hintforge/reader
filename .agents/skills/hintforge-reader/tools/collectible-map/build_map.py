@@ -142,7 +142,13 @@ def build(cfg, out=None):
     run = live_run(cfg["_guide"])
     # Each run keeps its own browser marks; a guide without runs keeps the plain key it always had.
     skey = cfg["storage_key"] + ("@run:" + run if run else "")
-    opt = dict(guide=cfg["guide"], artifact=out.name, storageKey=skey, run=run, rowmax=cfg.get("row_text_max", 0),
+    # The save helper is told the page's path under artifacts/ ("maps/full_map.html"), the same name the guide's
+    # artifacts.json declares it by; a page built outside artifacts/ sends its file name.
+    try:
+        art = out.relative_to(ic.gpath(cfg, "artifacts")).as_posix()
+    except ValueError:
+        art = out.name
+    opt = dict(guide=cfg["guide"], artifact=art, storageKey=skey, run=run, rowmax=cfg.get("row_text_max", 0),
                detailWhere=cfg.get("detail_shows_where", True),
                whereLabel={c["category"]: c["where_label"] for c in cfg["categories"] if c.get("where_label")},
                noteLabel=cfg.get("guide_entries", {}).get("notes", {}).get("label", "How to find it"),

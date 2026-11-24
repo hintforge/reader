@@ -1,6 +1,7 @@
 # test_state_bridge.ps1 -- checks the save helper (state_bridge.ps1) against a throwaway guide.
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File test_state_bridge.ps1
+#   pwsh -NoProfile -File test_state_bridge.ps1        (run under both; the helper uses the same shell)
 #
 # Starts its own copy of the helper on a spare port, with a temporary guides root, token file
 # and browser profile folder, so no real guide, launcher or browser window is touched. Checks:
@@ -11,6 +12,9 @@
 #   - a correct write marks and unmarks the item;
 #   - a web Origin is refused;
 #   - once the guide's CHECKPOINT.md names a run, a read or write for any other run (or none) is refused;
+#   - a page declared by its path under artifacts/ saves, by the same rule build_index.ps1 uses (full
+#     path, dot segments resolved, a bare file name only when one page has it); a one-entry manifest
+#     list is read under PowerShell 7 as under 5.1;
 #   - launch.ps1 hands the helper its browser profile, and the helper exits once the only browser
 #     using that profile closes (a headless browser stands in for the launcher window).
 # Prints one PASS/FAIL line per check; exits 0 only when all pass. Stops every process it started.
@@ -54,7 +58,9 @@ function Call([string]$method, [string]$url, [string]$body, [string]$origin) {
 function Taken { @((Get-Content -LiteralPath $status -Raw -Encoding UTF8 | ConvertFrom-Json).taken) }
 function Post([hashtable]$b, [string]$origin = 'null') { Call 'POST' $base ($b | ConvertTo-Json -Compress) $origin }
 
-$ps = (Get-Command powershell.exe).Source
+# The helper runs under the same PowerShell as this test, so running the test under both
+# Windows PowerShell 5.1 and PowerShell 7 checks the helper under both.
+$ps = (Get-Process -Id $PID).Path
 $helper = $null
 $browserPids = @()
 try {
@@ -109,6 +115,32 @@ try {
     Check 'a read naming the live run works' ($r.Code -eq 200 -and $r.Text -match '"taken":\[\]') "HTTP $($r.Code) $($r.Text)"
     $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:4'; taken = $true; token = $token; run = 'Rebels' }
     Check 'a write naming the new live run marks the item' ($r.Code -eq 200 -and (Taken) -contains 'src:4') "HTTP $($r.Code)"
+
+    # A page in a subfolder, declared by its path under artifacts/, saves; so does an older page
+    # that sends only its file name while it is the only page with that name.
+    $nested = Join-Path $guideDir 'extract_tools\nested_status.json'
+    [System.IO.File]::WriteAllText($nested, "{`n  `"as_of`": `"`",`n  `"taken`": []`n}`n", $utf8)
+    New-Item -ItemType Directory -Force -Path (Join-Path $guideDir 'artifacts\maps') | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $guideDir 'artifacts\maps\full_map.html'), '<!doctype html><title>t</title>', $utf8)
+    [System.IO.File]::WriteAllText((Join-Path $guideDir 'artifacts\artifacts.json'),
+        '[{"file":"map.html","writes_state":"extract_tools/item_status.json"},{"file":"maps/full_map.html","writes_state":"extract_tools/nested_status.json"}]', $utf8)
+    function NestedTaken { @((Get-Content -LiteralPath $nested -Raw -Encoding UTF8 | ConvertFrom-Json).taken) }
+    $r = Post @{ guide = 'test_guide'; artifact = 'maps/full_map.html'; id = 'src:7'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'a nested page declared by its path saves into its own file' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:7' -and -not ((Taken) -contains 'src:7')) "HTTP $($r.Code)"
+    $r = Post @{ guide = 'test_guide'; artifact = './maps/../maps/full_map.html'; id = 'src:8'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'dot segments in the page path are resolved' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:8') "HTTP $($r.Code)"
+    $r = Post @{ guide = 'test_guide'; artifact = 'full_map.html'; id = 'src:9'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'an older page sending only its unique file name still saves' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:9') "HTTP $($r.Code)"
+    $r = Post @{ guide = 'test_guide'; artifact = '../other/full_map.html'; id = 'src:10'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'a page path climbing out of artifacts/ is refused' ($r.Code -eq 400) "HTTP $($r.Code)"
+    New-Item -ItemType Directory -Force -Path (Join-Path $guideDir 'artifacts\old') | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $guideDir 'artifacts\old\full_map.html'), '<!doctype html><title>t</title>', $utf8)
+    $r = Post @{ guide = 'test_guide'; artifact = 'full_map.html'; id = 'src:11'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'a file name two pages share is refused' ($r.Code -eq 400 -and -not ((NestedTaken) -contains 'src:11')) "HTTP $($r.Code)"
+    $r = Post @{ guide = 'test_guide'; artifact = 'old/full_map.html'; id = 'src:12'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'an undeclared same-named page is refused' ($r.Code -eq 400) "HTTP $($r.Code)"
+    $r = Post @{ guide = 'test_guide'; artifact = 'maps/full_map.html'; id = 'src:13'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'the declared nested page still saves beside a same-named page' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:13') "HTTP $($r.Code)"
 
     $launch = Get-Content -LiteralPath (Join-Path $here 'launch.ps1') -Raw
     Check 'launch.ps1 opens its own browser profile and hands it to the helper' (($launch -match '--user-data-dir=') -and ($launch -match "'-ProfileDir'")) ''

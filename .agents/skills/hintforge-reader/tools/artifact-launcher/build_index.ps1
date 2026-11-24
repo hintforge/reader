@@ -152,7 +152,12 @@ function Read-Manifest {
         return $result
     }
     # A bare list of entries, or { "artifacts": [...] } -- the same two shapes state_bridge.ps1 reads.
-    $entries = if ($manifest -is [System.Array]) { $manifest } else { @($manifest.artifacts) }
+    # Windows PowerShell 5.1 keeps a one-entry list as a list; PowerShell 7 hands back the
+    # single entry, so a lone entry object is read as a one-entry list too.
+    $entries = if ($null -eq $manifest) { @() }
+               elseif ($manifest -is [System.Array]) { $manifest }
+               elseif ($manifest.PSObject.Properties.Name -contains 'artifacts') { @($manifest.artifacts) }
+               else { @($manifest) }
     foreach ($entry in $entries) {
         if (-not $entry) { continue }
         $rel = $null

@@ -6,10 +6,11 @@
 # own artifacts/artifacts.json: an entry whose "file" is the page and whose
 # "writes_state" names the guide-relative JSON file, for example
 #   { "file": "full_map.html", "writes_state": "extract_tools/item_status.json", ... }
-# No central list names any guide. The page keeps its marks in browser storage
+# A page in a subfolder is declared by its path under artifacts/ ("maps/full_map.html");
+# a bare file name still works when only one page in the guide has it. No central list names any guide. The page keeps its marks in browser storage
 # too, so nothing is lost while this is not running.
 #
-#   GET  /taken?guide=<folder>&artifact=<file>&token=<t>&run=<r>   -> {"ok":true,"taken":[...],"as_of":"..."}
+#   GET  /taken?guide=<folder>&artifact=<path under artifacts/>&token=<t>&run=<r>   -> {"ok":true,"taken":[...],"as_of":"..."}
 #   POST /taken  body {"guide","artifact","id","taken":true|false,"token","run"}  (sent as text/plain,
 #        so the browser needs no CORS preflight)
 #
@@ -103,14 +104,64 @@ function Test-Token([string]$t) {
     return ($diff -eq 0)
 }
 
+function ConvertTo-ArtifactRel {
+    # Same rule as build_index.ps1: a path relative to artifacts/, forward slashes,
+    # lowercase, leading "./" and "artifacts/" dropped, "." and ".." resolved; $null
+    # for a path that climbs out of artifacts/.
+    param([string]$Path)
+    $p = ($Path -replace '\\', '/').ToLowerInvariant() -replace '^(\./)+', ''
+    $p = $p -replace '^artifacts/', ''
+    $out = New-Object System.Collections.Generic.List[string]
+    foreach ($seg in ($p -split '/')) {
+        if ($seg -eq '' -or $seg -eq '.') { continue }
+        if ($seg -eq '..') { if ($out.Count -eq 0) { return $null }; $out.RemoveAt($out.Count - 1); continue }
+        $out.Add($seg)
+    }
+    $out -join '/'
+}
+
+function Read-ManifestEntries([string]$path) {
+    # A bare list of entries or { "artifacts": [...] }. Windows PowerShell 5.1 keeps a
+    # one-entry list as a list; PowerShell 7 hands back the single entry, so a lone
+    # entry object is read as a one-entry list too.
+    $m = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+    if ($null -eq $m) { return @() }
+    if ($m -is [System.Array]) { return $m }
+    if ($m.PSObject.Properties.Name -contains 'artifacts') { return @($m.artifacts) }
+    return @($m)
+}
+
 function Resolve-StateFile([string]$guide, [string]$artifact) {
-    if ($guide -notmatch '^[A-Za-z0-9_-]+$' -or $artifact -notmatch '^[A-Za-z0-9_.-]+\.html$') { return $null }
+    # The page names itself by its path under artifacts/ ("maps/full_map.html"); an
+    # older page sends only its file name, which counts when exactly one page in the
+    # guide has that name. A declaration matches the same way as in build_index.ps1:
+    # by full path, or by a bare file name that only one page has.
+    if ($guide -notmatch '^[A-Za-z0-9_-]+$' -or $artifact -notmatch '^[A-Za-z0-9_./-]+\.html$') { return $null }
     $guideDir = Join-Path $GuidesRoot $guide
-    $manifest = Join-Path $guideDir 'artifacts\artifacts.json'
+    $artDir = Join-Path $guideDir 'artifacts'
+    $manifest = Join-Path $artDir 'artifacts.json'
     if (-not (Test-Path -LiteralPath $manifest)) { return $null }
-    $m = Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 | ConvertFrom-Json
-    $entries = if ($m -is [System.Array]) { $m } else { @($m.artifacts) }
-    $entry = $entries | Where-Object { $_ -and $_.file -eq $artifact -and $_.writes_state } | Select-Object -First 1
+    $pages = @(Get-ChildItem -LiteralPath $artDir -Recurse -File -Filter '*.html' -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike '*.template.html' } |
+        ForEach-Object { ConvertTo-ArtifactRel $_.FullName.Substring($artDir.Length) })
+    $want = ConvertTo-ArtifactRel $artifact
+    if (-not $want) { return $null }
+    if ($pages -notcontains $want) {
+        $same = @($pages | Where-Object { ($_ -split '/')[-1] -eq $want })
+        if ($want -match '/' -or $same.Count -ne 1) { return $null }
+        $want = $same[0]
+    }
+    $base = ($want -split '/')[-1]
+    $entry = $null
+    foreach ($e in (Read-ManifestEntries $manifest)) {
+        if (-not $e -or -not ($e.PSObject.Properties.Name -contains 'writes_state') -or -not $e.writes_state) { continue }
+        $decl = $null
+        foreach ($prop in 'local_path', 'file', 'path') {
+            if ($e.PSObject.Properties.Name -contains $prop -and $e.$prop) { $decl = ConvertTo-ArtifactRel ([string]$e.$prop); break }
+        }
+        if (-not $decl) { continue }
+        if ($decl -eq $want -or ($decl -notmatch '/' -and $decl -eq $base -and @($pages | Where-Object { ($_ -split '/')[-1] -eq $base }).Count -eq 1)) { $entry = $e; break }
+    }
     if (-not $entry) { return $null }
     $rel = [string]$entry.writes_state
     if ($rel -notmatch '\.json$') { return $null }

@@ -159,7 +159,13 @@ function Read-Manifest {
             status   = if ($entry.PSObject.Properties.Name -contains 'status') { [string]$entry.status } else { $null }
             note     = if ($entry.PSObject.Properties.Name -contains 'spoiler_note') { [string]$entry.spoiler_note } else { $null }
             published = if ($entry.PSObject.Properties.Name -contains 'published_url') { [string]$entry.published_url } else { $null }
-            writes   = [bool]($entry.PSObject.Properties.Name -contains 'writes_state' -and $entry.writes_state)
+            # The page may save marks through the save helper, so the launcher hands
+            # it this run's key. Stored as the declared path (relative to artifacts/),
+            # not a flag: this index is keyed by basename, and a same-named page in
+            # another subfolder must not get the key.
+            writesPath = if ($entry.PSObject.Properties.Name -contains 'writes_state' -and $entry.writes_state) {
+                (($rel -replace '\\', '/') -replace '^(\./)?(artifacts/)?', '').ToLowerInvariant()
+            } else { $null }
         }
     }
     return $index
@@ -230,7 +236,7 @@ foreach ($gameDir in (Get-ChildItem -LiteralPath $GuidesRoot -Directory | Sort-O
             status    = if ($meta) { $meta.status } else { $null }
             note      = if ($meta) { $meta.note } else { $null }
             published = if ($meta) { $meta.published } else { $null }
-            writes    = if ($meta) { [bool]$meta.writes } else { $false }
+            writes    = [bool]($meta -and $meta.writesPath -and $meta.writesPath -eq ($file.FullName.Substring($artifactsDir.Length).TrimStart('\') -replace '\\', '/').ToLowerInvariant())
             inManifest = [bool]$meta
         }
     }

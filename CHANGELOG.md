@@ -4,6 +4,10 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Launcher save key goes by path, not file name (framework v120)
+
+- `tools/artifact-launcher/build_index.ps1` gives a page the save key only when its path under `artifacts/` matches the manifest entry that declares `"writes_state"`. Before, the match was by file name alone, so a same-named page in another subfolder of `artifacts/` also got the key.
+
 ### Honest marks outside the launcher; map builds with no positioned items (framework v113)
 
 - The collectible map opened without the launcher (a double-click in the everyday browser) now says its marks stay in this browser only and must be ticked again inside the artifact launcher. The launcher runs in its own browser profile, so it never sees those marks; the old message implied they would be sent. `test_map.py` checks the wording.

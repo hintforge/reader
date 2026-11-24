@@ -10,6 +10,7 @@
 #   - "taken" must be a JSON true or false: the string "false", null or a missing value is refused;
 #   - a correct write marks and unmarks the item;
 #   - a web Origin is refused;
+#   - once the guide's CHECKPOINT.md names a run, a read or write for any other run (or none) is refused;
 #   - launch.ps1 hands the helper its browser profile, and the helper exits once the only browser
 #     using that profile closes (a headless browser stands in for the launcher window).
 # Prints one PASS/FAIL line per check; exits 0 only when all pass. Stops every process it started.
@@ -90,6 +91,24 @@ try {
     Check 'read with the token works' ($r.Code -eq 200 -and $r.Text -match 'src:1') "HTTP $($r.Code)"
     $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:1'; taken = $false; token = $token } ''
     Check 'a correct write unmarks the item (no Origin, a local tool)' ($r.Code -eq 200 -and (Taken).Count -eq 0) "HTTP $($r.Code)"
+
+    # Runs: the guide's CHECKPOINT.md "run:" line is the live run; a request for any other run is refused.
+    $cp = Join-Path $guideDir 'CHECKPOINT.md'
+    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: 1`n", $utf8)
+    $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:2'; taken = $true; token = $token; run = '1' }
+    Check 'a write naming the live run marks the item' ($r.Code -eq 200 -and (Taken) -contains 'src:2') "HTTP $($r.Code), taken $((Taken) -join ',')"
+    $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:3'; taken = $true; token = $token }
+    Check 'a write with no run is refused once the guide names a run' ($r.Code -eq 409 -and -not ((Taken) -contains 'src:3')) "HTTP $($r.Code)"
+    [System.IO.File]::WriteAllText($status, "{`n  `"as_of`": `"`",`n  `"taken`": []`n}`n", $utf8)
+    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: Rebels`n", $utf8)
+    $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:1'; taken = $true; token = $token; run = '1' }
+    Check 'a write from an earlier run is refused and the new run stays empty' ($r.Code -eq 409 -and (Taken).Count -eq 0) "HTTP $($r.Code), taken $((Taken) -join ',')"
+    $r = Call 'GET' "$base`?guide=test_guide&artifact=map.html&token=$token&run=1" '' 'null'
+    Check 'a read from an earlier run is refused' ($r.Code -eq 409) "HTTP $($r.Code)"
+    $r = Call 'GET' "$base`?guide=test_guide&artifact=map.html&token=$token&run=Rebels" '' 'null'
+    Check 'a read naming the live run works' ($r.Code -eq 200 -and $r.Text -match '"taken":\[\]') "HTTP $($r.Code) $($r.Text)"
+    $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:4'; taken = $true; token = $token; run = 'Rebels' }
+    Check 'a write naming the new live run marks the item' ($r.Code -eq 200 -and (Taken) -contains 'src:4') "HTTP $($r.Code)"
 
     $launch = Get-Content -LiteralPath (Join-Path $here 'launch.ps1') -Raw
     Check 'launch.ps1 opens its own browser profile and hands it to the helper' (($launch -match '--user-data-dir=') -and ($launch -match "'-ProfileDir'")) ''

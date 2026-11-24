@@ -9,6 +9,8 @@ A guide opts into the live collectible map with four files. The tool reads them;
 | `extract_tools/collectible_map.json` | the builder, once | how this game's items become codes, dots and list rows |
 | `artifacts/artifacts.json` entry | the builder, once | `"file": "full_map.html", "writes_state": "extract_tools/item_status.json"`, which lets the save helper write that one file |
 
+Runs: when the guide's `CHECKPOINT.md` has a `run:` line, `build_map.py` builds the page for that run (browser-storage key `<storage_key>@run:<run>`, and every save-helper request names the run); the save helper refuses a request whose run is not the live `run:`. A new run shelves `item_status.json` to `runs/<run>.item_status.json`, resets `taken`, and rebuilds the page (reader rule: `persona_universal.md` "Runs"). No `run:` line: the plain `storage_key`, as before.
+
 Optional: `extract_tools/map_positions.json` (`{"positions": {id: {"x", "y", "approx"}}}`) when positions are picture pixels registered from screenshots rather than map coordinates in the catalog.
 
 Commands, from the guide folder (`T` = this folder):

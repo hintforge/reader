@@ -4,6 +4,12 @@ All notable, user-visible changes to the hintforge reader land here.
 
 ## Unreleased
 
+### Each run of a game kept separate; launcher save key by full path (framework v121)
+
+- New reader rule (`persona_universal.md`, "Runs"): when the player says they are starting over, the reader asks what to call the run, shelves the old run's player state (status, non-dial key decisions, session intent, inventory, position, timeline, play open threads) verbatim to `runs/<name>.md` and the map's marks to `runs/<name>.item_status.json`, resets those parts, sets `run:` in `CHECKPOINT.md`, rebuilds the collectible map, and asks where the player is. Dials, player name, `game_window_process:`, `Corpus gap:` and `Unsaved finding:` entries and all guide knowledge carry over. "Go back to my <name> run" swaps back. A resume recap starts with the run name.
+- `tools/collectible-map/build_map.py` builds the page for the guide's `run:` (its browser-storage key and every save-helper request carry the run). `tools/artifact-launcher/state_bridge.ps1` refuses (409) a read or write whose run is not the guide's live `run:`, so a map left open from an earlier run cannot write into the new one; the page says so. A guide with no `run:` line works as before. `test_state_bridge.ps1` and `test_item_codes.py` check it.
+- `tools/artifact-launcher/build_index.ps1`: two declared pages with the same file name in different subfolders both get the save key; a bare-name declaration still covers a page in a subfolder when it is the only page with that name, and with two or more the build warns and gives neither the key; `.` and `..` in a declared path are resolved. New `test_build_index.ps1`.
+
 ### Launcher save key goes by path, not file name (framework v120)
 
 - `tools/artifact-launcher/build_index.ps1` gives a page the save key only when its path under `artifacts/` matches the manifest entry that declares `"writes_state"`. Before, the match was by file name alone, so a same-named page in another subfolder of `artifacts/` also got the key.

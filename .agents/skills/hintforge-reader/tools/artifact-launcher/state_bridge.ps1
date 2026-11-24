@@ -9,9 +9,15 @@
 # No central list names any guide. The page keeps its marks in browser storage
 # too, so nothing is lost while this is not running.
 #
-#   GET  /taken?guide=<folder>&artifact=<file>&token=<t>   -> {"ok":true,"taken":[...],"as_of":"..."}
-#   POST /taken  body {"guide","artifact","id","taken":true|false,"token"}  (sent as text/plain,
+#   GET  /taken?guide=<folder>&artifact=<file>&token=<t>&run=<r>   -> {"ok":true,"taken":[...],"as_of":"..."}
+#   POST /taken  body {"guide","artifact","id","taken":true|false,"token","run"}  (sent as text/plain,
 #        so the browser needs no CORS preflight)
+#
+# Runs: a guide whose CHECKPOINT.md has a "run: <name>" line is on that run. A request
+# whose "run" is not that name is refused with 409 (and the live run name), so a map
+# page built for an earlier run cannot read or write the current run's marks. No
+# "run:" line and no "run" in the request both mean "", so a guide without runs works
+# as before.
 #
 # Guards: every request must carry this run's token. The helper makes a fresh random
 # token each time it starts and writes it to TokenFile (default
@@ -113,6 +119,24 @@ function Resolve-StateFile([string]$guide, [string]$artifact) {
     $full
 }
 
+function Get-LiveRun([string]$guide) {
+    # The first "run:" line of the guide's CHECKPOINT.md; "" when there is none.
+    $cp = Join-Path (Join-Path $GuidesRoot $guide) 'CHECKPOINT.md'
+    if (-not (Test-Path -LiteralPath $cp)) { return '' }
+    $m = [regex]::Match([System.IO.File]::ReadAllText($cp, [System.Text.Encoding]::UTF8), '(?m)^run:[ \t]*(.*?)[ \t]*\r?$')
+    if ($m.Success) { return $m.Groups[1].Value }
+    return ''
+}
+
+function Test-Run($ctx, [string]$guide, $run) {
+    # True when the request's run is the guide's live run; otherwise answers 409 and returns false.
+    $want = if ($null -eq $run) { '' } else { ([string]$run).Trim() }
+    $live = Get-LiveRun $guide
+    if ([string]::Equals($want, $live, [System.StringComparison]::Ordinal)) { return $true }
+    Send $ctx 409 @{ ok = $false; error = 'run mismatch'; run = $live; page_run = $want }
+    return $false
+}
+
 function Read-State([string]$path) {
     if (-not (Test-Path -LiteralPath $path)) { return @{ text = "{`n  `"as_of`": `"`",`n  `"taken`": []`n}`n"; taken = @(); as_of = '' } }
     $text = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
@@ -163,6 +187,7 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
         if (-not (Test-Token $req.QueryString['token'])) { Send $ctx 403 @{ ok = $false; error = 'bad token' }; return }
         $path = Resolve-StateFile $req.QueryString['guide'] $req.QueryString['artifact']
         if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'artifact not allowed' }; return }
+        if (-not (Test-Run $ctx $req.QueryString['guide'] $req.QueryString['run'])) { return }
         $st = Read-State $path
         Send $ctx 200 @{ ok = $true; taken = @($st.taken); as_of = $st.as_of }
         return
@@ -176,6 +201,7 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
     if (-not (Test-Token ([string]$b.token))) { Send $ctx 403 @{ ok = $false; error = 'bad token' }; return }
     $path = Resolve-StateFile ([string]$b.guide) ([string]$b.artifact)
     if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'artifact not allowed' }; return }
+    if (-not (Test-Run $ctx ([string]$b.guide) $b.run)) { Write-Log ("refused a mark for run '{0}' in {1}" -f $b.run, $path); return }
     $id = [string]$b.id
     if ($id -notmatch '^[A-Za-z0-9_-]+:[A-Za-z0-9_-]+$') { Send $ctx 400 @{ ok = $false; error = 'bad id' }; return }
     # Only a JSON true or false: a cast would read the string "false" as true and a missing value as false.

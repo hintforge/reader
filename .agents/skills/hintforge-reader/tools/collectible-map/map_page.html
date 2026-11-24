@@ -162,21 +162,25 @@ let touched=false;svg.addEventListener("wheel",()=>touched=true);svg.addEventLis
 // a reload and without moving the map. The helper answers only with this run's token, which the launcher puts in the
 // page address (#bridge=...). Opened any other way, the page keeps its marks in this browser only and says so: the
 // launcher runs in its own browser profile, so it never sees them, and the player ticks them again inside the launcher.
-const BRIDGE="http://127.0.0.1:47831/taken",GUIDE=OPT.guide,ART=OPT.artifact,LKEY=OPT.storageKey,SKEY=LKEY+"-saved";
+// Runs: the page carries the run it was built for (the guide CHECKPOINT's "run:" line; build_map.py also puts it in the
+// storage key, so each run keeps its own browser marks). Every request names that run, and the helper refuses one that
+// is not the guide's live run, so a page left open from an earlier run never writes into the new one.
+const BRIDGE="http://127.0.0.1:47831/taken",GUIDE=OPT.guide,ART=OPT.artifact,RUN=OPT.run||"",LKEY=OPT.storageKey,SKEY=LKEY+"-saved";
 const TOKEN=(/[#&]bridge=([0-9a-f]+)/.exec(location.hash)||[])[1]||"";
-let pending={},saved=null,live=null;try{pending=JSON.parse(localStorage.getItem(LKEY)||"{}")||{}}catch(e){}
+let pending={},saved=null,live=null,otherRun=null;try{pending=JSON.parse(localStorage.getItem(LKEY)||"{}")||{}}catch(e){}
 try{saved=JSON.parse(localStorage.getItem(SKEY)||"null")}catch(e){}
 function savePending(){try{localStorage.setItem(LKEY,JSON.stringify(pending))}catch(e){}}
 function keepSaved(j){saved={taken:j.taken||[],as_of:j.as_of||""};try{localStorage.setItem(SKEY,JSON.stringify(saved))}catch(e){}}
 function syncText(){const n=ITEMS.filter(i=>i.taken).length,w=Object.keys(pending).length;
- document.getElementById("sync").textContent=n+" taken - "+(!TOKEN?"marks made here stay in this browser only"+(w?" ("+w+" not saved to the guide)":"")+". To save marks to the guide, open the map from the artifact launcher and tick them again there.":live===null?"checking the save helper...":live?(w?"saving...":"saved to the guide"):"kept in this window only: the launcher's save helper is not running"+(w?" ("+w+" to send)":""))}
+ document.getElementById("sync").textContent=n+" taken - "+(otherRun!==null?"this map is from run "+(RUN||"(unnamed)")+", but the guide is now on run "+(otherRun||"(unnamed)")+". Marks made here are not saved to the guide"+(w?" ("+w+" kept for that run)":"")+". Reload the map from the launcher.":!TOKEN?"marks made here stay in this browser only"+(w?" ("+w+" not saved to the guide)":"")+". To save marks to the guide, open the map from the artifact launcher and tick them again there.":live===null?"checking the save helper...":live?(w?"saving...":"saved to the guide"):"kept in this window only: the launcher's save helper is not running"+(w?" ("+w+" to send)":""))}
 function redraw(){draw();if(sel)pick(sel,false)}
 function toggle(i){i.taken=!i.taken;pending[i.id]=i.taken;savePending();redraw();syncText();push(i.id)}
 async function push(id){const v=pending[id];if(!TOKEN)return;
- try{const r=await fetch(BRIDGE,{method:"POST",body:JSON.stringify({guide:GUIDE,artifact:ART,id:id,taken:v,token:TOKEN})}),j=await r.json();
-  if(!j.ok)throw new Error(j.error);keepSaved(j);if(pending[id]===v){delete pending[id];savePending()}live=true}catch(e){live=false}syncText()}
+ try{const r=await fetch(BRIDGE,{method:"POST",body:JSON.stringify({guide:GUIDE,artifact:ART,id:id,taken:v,token:TOKEN,run:RUN})}),j=await r.json();
+  if(wrongRun(j))return;if(!j.ok)throw new Error(j.error);keepSaved(j);if(pending[id]===v){delete pending[id];savePending()}live=true}catch(e){live=false}syncText()}
+function wrongRun(j){if(j&&j.error==="run mismatch"){otherRun=String(j.run||"");live=false;syncText();return true}otherRun=null;return false}
 async function pull(){if(!TOKEN){syncText();return}
- try{const r=await fetch(BRIDGE+"?guide="+GUIDE+"&artifact="+ART+"&token="+TOKEN,{cache:"no-store"}),j=await r.json();if(!j.ok)throw new Error(j.error);
+ try{const r=await fetch(BRIDGE+"?guide="+GUIDE+"&artifact="+ART+"&token="+TOKEN+"&run="+encodeURIComponent(RUN),{cache:"no-store"}),j=await r.json();if(wrongRun(j))return;if(!j.ok)throw new Error(j.error);
   const s=new Set(j.taken);keepSaved(j);live=true;let ch=false;
   ITEMS.forEach(i=>{const v=(i.id in pending)?pending[i.id]:s.has(i.id);if(v!==i.taken){i.taken=v;ch=true}});
   Object.keys(pending).forEach(push);if(ch)redraw()}catch(e){live=false}syncText()}

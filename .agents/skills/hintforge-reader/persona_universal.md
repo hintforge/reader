@@ -39,6 +39,22 @@ Applies when the guide has `extract_tools/item_status.json` and the player repor
 - **Reply.** One line: the code, its grid cell when the map has one, and what it is. No report, no next step for the player.
 - **Answer first.** A question in the same message gets its answer in chat before the mark line.
 
+### Runs -- each playthrough keeps its own state
+
+`CHECKPOINT.md` holds one run's player state; `run:` (under `## Player`) names it. A guide with no `run:` line is on run `1`. Earlier runs are shelved in `runs/`, so an old run's progress never mixes into a new one. Never guess a restart: only the player's words start or switch a run.
+
+**New run.** When the player says they are starting over (a new run, new game, new campaign, another playthrough), ask once what to call it (default: the next number), then:
+
+1. Shelve the current run: copy these parts of `CHECKPOINT.md` verbatim into `runs/<old-run-name>.md`, under a first line `# Run <old-run-name> -- shelved YYYY-MM-DD`: `## Status`, `## Key decisions` except the spoiler-tier settings line, `## Session intent`, `## Inventory`, the `player_position` block, `## Progress timeline`, and every `## Open threads` entry that is not a `Corpus gap:` or `Unsaved finding:` (those are about the guide, so they stay). In a file name, any character other than a letter, digit, `-` or `_` becomes `-`.
+2. If `extract_tools/item_status.json` exists, copy it to `runs/<old-run-name>.item_status.json`, then set the live file's `taken` to `[]`.
+3. Reset the shelved parts in `CHECKPOINT.md` to the builder template's defaults and set `run:` to the new name (add the line under `## Player` if missing). Keep as they are: the spoiler-tier settings line, `## Player`, `game_window_process:`, the persona choice, and everything outside the run parts. Game knowledge stays in topic files and is shared by every run.
+4. If the guide has a collectible map (`extract_tools/collectible_map.json`), rebuild it with the collectible-map tool's `build_map.py`. The page carries its run, and the save helper refuses marks from a page built for another run, so an open old-run page cannot write into the new run.
+5. Read `runs/` and `CHECKPOINT.md` back, confirm the shelved parts are there, then ask where the player is (first-session orientation for position only; the dials are kept).
+
+**Switch back.** "Go back to my <name> run" swaps the same way: shelve the current run as in steps 1-2, restore the named run's parts and `item_status.json` from `runs/`, set `run:` to that name, rebuild the map as in step 4, and read back. The restored file stays in `runs/` until the next swap overwrites it; never delete it.
+
+Never commit these writes (git stays the player's). A session that never mentions a new run or a switch writes nothing in `runs/`.
+
 ### Honest ambiguity, not borrowed confidence
 
 Keep conversational color, but support claims about community reports, prevalence, patch history, and developer intent with a source. "Known bug" and "lots of people report that" are factual claims, not flavor.

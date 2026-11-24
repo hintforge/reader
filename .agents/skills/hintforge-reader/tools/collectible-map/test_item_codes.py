@@ -75,6 +75,23 @@ def main():
                   m is not None and json.loads(m.group(1))[0]["box"] == [0, 0, 800, 600], m.group(1) if m else "no VIEWS line")
         except Exception as e:  # noqa: BLE001 -- a crash is the failure being tested
             check("no positioned item: the page builds", False, "%s: %s" % (type(e).__name__, e))
+
+    # Runs: a guide with no `run:` line keeps its plain storage key and sends run ""; a guide with one gets a per-run key.
+    def opt_of(html):
+        m = re.search(r"^const OPT=(.*);$", html, re.M)
+        return json.loads(m.group(1)) if m else {}
+    with tempfile.TemporaryDirectory() as d:
+        cfg = guide(d, {"kind": "lnglat", "x": "lng", "y": "lat"}, entries)
+        cfg.update(image={"file": "artifacts/map.png", "size": [800, 600]},
+                   views=[{"label": "All", "box": "image"}], out="artifacts/full_map.html")
+        out = Path(d) / "artifacts" / "full_map.html"
+        (Path(d) / "CHECKPOINT.md").write_text("# t\n\n## Player\n- **Name:** P\n", encoding="utf-8")
+        o = opt_of(Path(build_map.build(cfg, out)).read_text(encoding="utf-8"))
+        check("no run line: storage key unchanged, run empty", o.get("storageKey") == "test" and o.get("run") == "", str(o.get("storageKey")))
+        (Path(d) / "CHECKPOINT.md").write_text("# t\n\n## Player\n- **Name:** P\n\nrun: Rebels\n", encoding="utf-8")
+        o = opt_of(Path(build_map.build(cfg, out)).read_text(encoding="utf-8"))
+        check("run line: page carries the run and a per-run storage key",
+              o.get("run") == "Rebels" and o.get("storageKey") == "test@run:Rebels", "%s / %s" % (o.get("run"), o.get("storageKey")))
     print("ALL PASS" if ok else "SOME FAILED")
     return 0 if ok else 1
 

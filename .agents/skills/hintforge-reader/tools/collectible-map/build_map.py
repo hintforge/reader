@@ -11,6 +11,9 @@ and sent to the artifact launcher's save helper (tools/artifact-launcher/state_b
 item_status.json; the page re-reads that file every 5 seconds and redraws only the marks, so a mark the reader writes
 during play shows up on the second screen without a reload and without moving the map.
 
+Runs: when the guide's CHECKPOINT.md has a `run:` line, the page is built for that run (its browser-storage key and
+every save-helper request carry it). The reader rebuilds the page when the player starts or switches a run.
+
 Read-only on the catalog and status files. Config reference: catalog_schema.md. Standard library only (Pillow, if
 installed, is used only to check the picture size).
 """
@@ -96,6 +99,16 @@ def view_box(cfg, spec, grid, data, size):
     return [a, b, c - a, d - b]
 
 
+def live_run(guide_dir):
+    """The guide's current run: the first `run:` line of its CHECKPOINT.md, or "" when there is none (a guide without
+    runs). The save helper reads the same line and refuses a page built for another run."""
+    cp = Path(guide_dir) / "CHECKPOINT.md"
+    if not cp.exists():
+        return ""
+    m = re.search(r"^run:[ \t]*(.*?)[ \t]*$", cp.read_text(encoding="utf-8", errors="replace"), re.M)
+    return m.group(1) if m else ""
+
+
 def build(cfg, out=None):
     items, st = ic.load(cfg)
     guide_text = ic.guide_entries(cfg, {i["code"] for i in items})
@@ -126,7 +139,10 @@ def build(cfg, out=None):
     views = [dict(label=v["label"], box=view_box(cfg, v["box"], grid, data, size)) for v in cfg["views"]]
     start = next(v["box"] for v in views if v["label"] == cfg.get("start_view", views[0]["label"]))
     t = cfg.get("text", {})
-    opt = dict(guide=cfg["guide"], artifact=out.name, storageKey=cfg["storage_key"], rowmax=cfg.get("row_text_max", 0),
+    run = live_run(cfg["_guide"])
+    # Each run keeps its own browser marks; a guide without runs keeps the plain key it always had.
+    skey = cfg["storage_key"] + ("@run:" + run if run else "")
+    opt = dict(guide=cfg["guide"], artifact=out.name, storageKey=skey, run=run, rowmax=cfg.get("row_text_max", 0),
                detailWhere=cfg.get("detail_shows_where", True),
                whereLabel={c["category"]: c["where_label"] for c in cfg["categories"] if c.get("where_label")},
                noteLabel=cfg.get("guide_entries", {}).get("notes", {}).get("label", "How to find it"),
@@ -145,7 +161,8 @@ def build(cfg, out=None):
     html = re.sub("|".join(re.escape(k) for k in rep), lambda m: rep[m.group(0)], html)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
-    print("items:", len(data), "on map:", sum(1 for d in data if d["x"] is not None), "taken:", sum(1 for d in data if d["taken"]), "->", out)
+    print("items:", len(data), "on map:", sum(1 for d in data if d["x"] is not None), "taken:", sum(1 for d in data if d["taken"]),
+          ("run: " + run) if run else "", "->", out)
     return out
 
 

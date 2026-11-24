@@ -16,9 +16,11 @@
 #
 # Runs: a guide whose CHECKPOINT.md has a "run: <name>" line is on that run. A request
 # whose "run" is not that name is refused with 409 (and the live run name), so a map
-# page built for an earlier run cannot read or write the current run's marks. No
-# "run:" line and no "run" in the request both mean "", so a guide without runs works
-# as before.
+# page built for an earlier run cannot read or write the current run's marks. Each run's
+# marks have their own file, runs/<run>/<declared path>, chosen from the run checked, and
+# the run is checked again just before a write. While the reader switches runs, "run:"
+# holds "(switching <old> -> <new>)", which no page carries. No "run:" line and no "run"
+# in the request both mean "": the declared file itself, as before.
 #
 # Guards: every request must carry this run's token. The helper makes a fresh random
 # token each time it starts and writes it to TokenFile (default
@@ -42,7 +44,8 @@ param(
     [int]$Port = 47831,
     [double]$MaxHours = 24,
     [string]$TokenFile,           # where this run's token is written; empty = the default above
-    [int]$WindowCheckSeconds = 30
+    [int]$WindowCheckSeconds = 30,
+    [int]$TestPauseMs = 0         # test_state_bridge.ps1 only: pause before the write-time run check
 )
 
 $ErrorActionPreference = 'Stop'
@@ -191,6 +194,21 @@ function Test-Run($ctx, [string]$guide, $run) {
     return $false
 }
 
+function Test-RunName([string]$run) {
+    # Same rule as the reader's run names: 1-32 letters, digits, - or _, never a Windows device name.
+    ($run -match '^[A-Za-z0-9_-]{1,32}$') -and ($run -notmatch '^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$')
+}
+
+function Get-RunStatePath([string]$guide, [string]$full, [string]$run) {
+    # Each run's marks live in their own file: runs/<run>/<declared path>. A guide with no
+    # "run:" line keeps the declared file itself, as before. $null for an unusable run name.
+    if (-not $run) { return $full }
+    if (-not (Test-RunName $run)) { return $null }
+    $guideDir = Join-Path $GuidesRoot $guide
+    $rel = $full.Substring($guideDir.Length).TrimStart('\', '/')
+    Join-Path (Join-Path (Join-Path $guideDir 'runs') $run) $rel
+}
+
 function Read-State([string]$path) {
     if (-not (Test-Path -LiteralPath $path)) { return @{ text = "{`n  `"as_of`": `"`",`n  `"taken`": []`n}`n"; taken = @(); as_of = '' } }
     $text = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
@@ -210,6 +228,7 @@ function Write-State([string]$path, $state, [string[]]$taken, [string]$asOf) {
         $text = [regex]::Replace($text, '"as_of"\s*:\s*"[^"]*"', { param($m) '"as_of": "' + $asOf + '"' })
     }
     $null = $text | ConvertFrom-Json   # never write a file that no longer parses
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $path) | Out-Null
     $tmp = $path + '.tmp'
     [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
     Move-Item -LiteralPath $tmp -Destination $path -Force
@@ -250,6 +269,8 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
         $path = Resolve-StateFile $q['guide'] $q['artifact']
         if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'artifact not allowed' }; return }
         if (-not (Test-Run $ctx $q['guide'] $q['run'])) { return }
+        $path = Get-RunStatePath $q['guide'] $path ([string]$q['run']).Trim()
+        if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'bad run name' }; return }
         $st = Read-State $path
         Send $ctx 200 @{ ok = $true; taken = @($st.taken); as_of = $st.as_of }
         return
@@ -264,6 +285,11 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
     $path = Resolve-StateFile ([string]$b.guide) ([string]$b.artifact)
     if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'artifact not allowed' }; return }
     if (-not (Test-Run $ctx ([string]$b.guide) $b.run)) { Write-Log ("refused a mark for run '{0}' in {1}" -f $b.run, $path); return }
+    # The file comes from the run just checked, so a request from an earlier run can only
+    # ever touch that run's own file, never the current run's.
+    $run = ([string]$b.run).Trim()
+    $path = Get-RunStatePath ([string]$b.guide) $path $run
+    if (-not $path) { Send $ctx 400 @{ ok = $false; error = 'bad run name' }; return }
     $id = [string]$b.id
     if ($id -notmatch '^[A-Za-z0-9_-]+:[A-Za-z0-9_-]+$') { Send $ctx 400 @{ ok = $false; error = 'bad id' }; return }
     # Only a JSON true or false: a cast would read the string "false" as true and a missing value as false.
@@ -278,6 +304,14 @@ function Handle([System.Net.HttpListenerContext]$ctx) {
     if (-not $want -and $list.Contains($id)) { [void]$list.Remove($id); $changed = $true }
     $asOf = $st.as_of
     if ($changed) {
+        if ($TestPauseMs -gt 0) { Start-Sleep -Milliseconds $TestPauseMs }
+        # Checked again just before writing: if the guide switched runs meanwhile, refuse.
+        $live = Get-LiveRun ([string]$b.guide)
+        if (-not [string]::Equals($run, $live, [System.StringComparison]::Ordinal)) {
+            Write-Log ("refused a mark for run '{0}': the guide switched to '{1}'" -f $run, $live)
+            Send $ctx 409 @{ ok = $false; error = 'run mismatch'; run = $live; page_run = $run }
+            return
+        }
         $asOf = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm') + ' UTC'
         Write-State $path $st $list.ToArray() $asOf
         Write-Log ("{0} {1} in {2}" -f $(if ($want) { 'marked' } else { 'unmarked' }), $id, $path)

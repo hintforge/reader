@@ -102,20 +102,31 @@ try {
     # Runs: the guide's CHECKPOINT.md "run:" line is the live run; a request for any other run is refused.
     $cp = Join-Path $guideDir 'CHECKPOINT.md'
     [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: 1`n", $utf8)
+    # Each run's marks are in runs/<run>/<declared path>; the declared file itself is the no-run file.
+    function RunTaken([string]$run, [string]$file = 'item_status.json') {
+        $p = Join-Path $guideDir ("runs\$run\extract_tools\$file")
+        if (-not (Test-Path -LiteralPath $p)) { return @() }
+        @((Get-Content -LiteralPath $p -Raw -Encoding UTF8 | ConvertFrom-Json).taken)
+    }
     $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:2'; taken = $true; token = $token; run = '1' }
-    Check 'a write naming the live run marks the item' ($r.Code -eq 200 -and (Taken) -contains 'src:2') "HTTP $($r.Code), taken $((Taken) -join ',')"
+    Check 'a write naming the live run marks the item in that run''s own file' ($r.Code -eq 200 -and (RunTaken '1') -contains 'src:2' -and (Taken).Count -eq 0) "HTTP $($r.Code), run 1 $((RunTaken '1') -join ',')"
     $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:3'; taken = $true; token = $token }
     Check 'a write with no run is refused once the guide names a run' ($r.Code -eq 409 -and -not ((Taken) -contains 'src:3')) "HTTP $($r.Code)"
-    [System.IO.File]::WriteAllText($status, "{`n  `"as_of`": `"`",`n  `"taken`": []`n}`n", $utf8)
     [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: Rebels`n", $utf8)
     $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:1'; taken = $true; token = $token; run = '1' }
-    Check 'a write from an earlier run is refused and the new run stays empty' ($r.Code -eq 409 -and (Taken).Count -eq 0) "HTTP $($r.Code), taken $((Taken) -join ',')"
+    Check 'a write from an earlier run is refused and the new run stays empty' ($r.Code -eq 409 -and (RunTaken 'Rebels').Count -eq 0) "HTTP $($r.Code)"
     $r = Call 'GET' "$base`?guide=test_guide&artifact=map.html&token=$token&run=1" '' 'null'
     Check 'a read from an earlier run is refused' ($r.Code -eq 409) "HTTP $($r.Code)"
     $r = Call 'GET' "$base`?guide=test_guide&artifact=map.html&token=$token&run=Rebels" '' 'null'
-    Check 'a read naming the live run works' ($r.Code -eq 200 -and $r.Text -match '"taken":\[\]') "HTTP $($r.Code) $($r.Text)"
+    Check 'a read naming the live run works and starts empty' ($r.Code -eq 200 -and $r.Text -match '"taken":\[\]') "HTTP $($r.Code) $($r.Text)"
     $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:4'; taken = $true; token = $token; run = 'Rebels' }
-    Check 'a write naming the new live run marks the item' ($r.Code -eq 200 -and (Taken) -contains 'src:4') "HTTP $($r.Code)"
+    Check 'a write naming the new live run marks the item' ($r.Code -eq 200 -and (RunTaken 'Rebels') -contains 'src:4' -and -not ((RunTaken '1') -contains 'src:4')) "HTTP $($r.Code)"
+    foreach ($bad in 'CON', 'com1', 'Lpt9') {
+        [System.IO.File]::WriteAllText($cp, "# t`n`nrun: $bad`n", $utf8)
+        $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:5'; taken = $true; token = $token; run = $bad }
+        Check "a Windows device name as a run ($bad) is refused" ($r.Code -eq 400) "HTTP $($r.Code)"
+    }
+    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: Rebels`n", $utf8)
 
     # A page in a subfolder, declared by its path under artifacts/, saves; so does an older page
     # that sends only its file name while it is the only page with that name.
@@ -125,9 +136,9 @@ try {
     [System.IO.File]::WriteAllText((Join-Path $guideDir 'artifacts\maps\full_map.html'), '<!doctype html><title>t</title>', $utf8)
     [System.IO.File]::WriteAllText((Join-Path $guideDir 'artifacts\artifacts.json'),
         '[{"file":"map.html","writes_state":"extract_tools/item_status.json"},{"file":"maps/full_map.html","writes_state":"extract_tools/nested_status.json"}]', $utf8)
-    function NestedTaken { @((Get-Content -LiteralPath $nested -Raw -Encoding UTF8 | ConvertFrom-Json).taken) }
+    function NestedTaken { RunTaken 'Rebels' 'nested_status.json' }
     $r = Post @{ guide = 'test_guide'; artifact = 'maps/full_map.html'; id = 'src:7'; taken = $true; token = $token; run = 'Rebels' }
-    Check 'a nested page declared by its path saves into its own file' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:7' -and -not ((Taken) -contains 'src:7')) "HTTP $($r.Code)"
+    Check 'a nested page declared by its path saves into its own file' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:7' -and -not ((RunTaken 'Rebels') -contains 'src:7')) "HTTP $($r.Code)"
     $r = Post @{ guide = 'test_guide'; artifact = './maps/../maps/full_map.html'; id = 'src:8'; taken = $true; token = $token; run = 'Rebels' }
     Check 'dot segments in the page path are resolved' ($r.Code -eq 200 -and (NestedTaken) -contains 'src:8') "HTTP $($r.Code)"
     $r = Post @{ guide = 'test_guide'; artifact = 'full_map.html'; id = 'src:9'; taken = $true; token = $token; run = 'Rebels' }
@@ -154,12 +165,31 @@ try {
     $r = Call 'GET' ("$base`?guide=test_guide&artifact=" + [uri]::EscapeDataString($odd) + "&token=$token&run=Rebels") '' 'null'
     Check 'a read for that page works' ($r.Code -eq 200 -and $r.Text -match 'src:14') "HTTP $($r.Code)"
 
-    # While the reader switches runs it sets run: to "(switching)", a value no run name can take, so a
-    # page of any run is refused until the switch is done.
-    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: (switching)`n", $utf8)
+    # While the reader switches runs, run: holds "(switching <old> -> <new>)", which no page carries,
+    # so a page of any run is refused until the switch is done.
+    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: (switching Rebels -> Third)`n", $utf8)
     $r = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:15'; taken = $true; token = $token; run = 'Rebels' }
     $r2 = Post @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:15'; taken = $true; token = $token }
-    Check 'during a run switch every page is refused' ($r.Code -eq 409 -and $r2.Code -eq 409 -and -not ((Taken) -contains 'src:15')) "HTTP $($r.Code) / $($r2.Code)"
+    Check 'during a run switch every page is refused' ($r.Code -eq 409 -and $r2.Code -eq 409 -and -not ((RunTaken 'Rebels') -contains 'src:15')) "HTTP $($r.Code) / $($r2.Code)"
+
+    # A write already accepted for the old run, paused (second helper, -TestPauseMs) while the guide
+    # switches runs, must not land in the new run's file: it is refused at the write-time check.
+    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: Rebels`n", $utf8)
+    $tokenFile2 = Join-Path $root 'bridge_token2.txt'
+    $helper2 = Start-Process -FilePath $ps -WindowStyle Hidden -PassThru -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+        ('"{0}"' -f $bridge), '-GuidesRoot', ('"{0}"' -f $guides), '-Port', ($port + 1), '-TokenFile', ('"{0}"' -f $tokenFile2), '-MaxHours', 0.05, '-TestPauseMs', 4000)
+    for ($i = 0; $i -lt 50 -and -not (Test-Path -LiteralPath $tokenFile2); $i++) { Start-Sleep -Milliseconds 200 }
+    $token2 = (Get-Content -LiteralPath $tokenFile2 -Raw).Trim()
+    Add-Type -AssemblyName System.Net.Http
+    $client = New-Object System.Net.Http.HttpClient
+    $body = @{ guide = 'test_guide'; artifact = 'map.html'; id = 'src:20'; taken = $true; token = $token2; run = 'Rebels' } | ConvertTo-Json -Compress
+    $pendingPost = $client.PostAsync("http://127.0.0.1:$($port + 1)/taken", (New-Object System.Net.Http.StringContent($body, [System.Text.Encoding]::UTF8, 'text/plain')))
+    Start-Sleep -Milliseconds 1500
+    [System.IO.File]::WriteAllText($cp, "# t`n`n## Player`n- **Name:** P`n`nrun: Third`n", $utf8)
+    $code = if ($pendingPost.Wait(15000)) { [int]$pendingPost.Result.StatusCode } else { -1 }
+    $client.Dispose()
+    Check 'an old-run write paused across a run switch is refused and leaves both runs untouched' ($code -eq 409 -and (RunTaken 'Third').Count -eq 0 -and -not ((RunTaken 'Rebels') -contains 'src:20')) "HTTP $code"
+    Stop-Process -Id $helper2.Id -Force -ErrorAction SilentlyContinue
 
     $launch = Get-Content -LiteralPath (Join-Path $here 'launch.ps1') -Raw
     Check 'launch.ps1 opens its own browser profile and hands it to the helper' (($launch -match '--user-data-dir=') -and ($launch -match "'-ProfileDir'")) ''

@@ -109,7 +109,23 @@ def live_run(guide_dir):
     return m.group(1) if m else ""
 
 
+RUN_NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+DEVICE_RE = re.compile(r"^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$", re.I)
+
+
+def run_status(cfg, run):
+    """The status file the page reads: `runs/<run>/<status>` for a guide on a named run (the save helper writes the
+    same file), the configured file itself for a guide without runs."""
+    if not run:
+        return cfg["status"]
+    if not RUN_NAME_RE.match(run) or DEVICE_RE.match(run):
+        raise SystemExit("run name %r in CHECKPOINT.md is not a usable run name (a switch in progress, or not 1-32 "
+                         "letters, digits, - or _, or a Windows device name); finish the switch first" % run)
+    return "runs/%s/%s" % (run, cfg["status"])
+
+
 def build(cfg, out=None):
+    cfg = dict(cfg, status=run_status(cfg, live_run(cfg["_guide"])))
     items, st = ic.load(cfg)
     guide_text = ic.guide_entries(cfg, {i["code"] for i in items})
     data = []

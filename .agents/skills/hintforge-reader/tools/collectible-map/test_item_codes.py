@@ -96,6 +96,23 @@ def main():
         check("page directly in artifacts/ names itself by file name", o.get("artifact") == "full_map.html", str(o.get("artifact")))
         o = opt_of(Path(build_map.build(cfg, Path(d) / "artifacts" / "maps" / "full_map.html")).read_text(encoding="utf-8"))
         check("page in a subfolder names itself by its path under artifacts/", o.get("artifact") == "maps/full_map.html", str(o.get("artifact")))
+        # Each run reads its own marks file; a guide without runs reads the configured file.
+        st_path = "extract_tools/item_status.json"
+        check("run status file is runs/<run>/<status>", build_map.run_status(cfg, "Rebels") == "runs/Rebels/" + st_path)
+        check("no run: the configured status file", build_map.run_status(cfg, "") == st_path)
+        (Path(d) / "runs" / "Rebels" / "extract_tools").mkdir(parents=True)
+        (Path(d) / "runs" / "Rebels" / st_path).write_text('{"as_of": "", "taken": ["src:1"]}', encoding="utf-8")
+        (Path(d) / st_path).write_text('{"as_of": "", "taken": ["src:2"]}', encoding="utf-8")
+        o = opt_of(Path(build_map.build(cfg, out)).read_text(encoding="utf-8"))
+        html = out.read_text(encoding="utf-8")
+        baked = {i["id"] for i in json.loads(re.search(r"^const ITEMS=(.*);$", html, re.M).group(1)) if i.get("taken")}
+        check("page built for a run shows that run's marks only", baked == {"src:1"}, str(baked))
+        for bad in ("CON", "com1", "Lpt9.txt", "(switching 1 -> 2)"):
+            try:
+                build_map.run_status(cfg, bad)
+                check("unusable run name %r refused" % bad, False)
+            except SystemExit:
+                check("unusable run name %r refused" % bad, True)
     print("ALL PASS" if ok else "SOME FAILED")
     return 0 if ok else 1
 

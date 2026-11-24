@@ -114,21 +114,42 @@ function Get-TitleFromFile {
     (Get-Culture).TextInfo.ToTitleCase(($BaseName -replace '[_-]', ' '))
 }
 
+function ConvertTo-ArtifactRel {
+    # A declared or scanned path, relative to artifacts/: forward slashes, lowercase,
+    # leading "./" and "artifacts/" dropped, "." and ".." segments resolved. Returns
+    # $null for a path that climbs out of artifacts/.
+    param([string]$Path)
+    $p = ($Path -replace '\\', '/').ToLowerInvariant() -replace '^(\./)+', ''
+    $p = $p -replace '^artifacts/', ''
+    $out = New-Object System.Collections.Generic.List[string]
+    foreach ($seg in ($p -split '/')) {
+        if ($seg -eq '' -or $seg -eq '.') { continue }
+        if ($seg -eq '..') { if ($out.Count -eq 0) { return $null }; $out.RemoveAt($out.Count - 1); continue }
+        $out.Add($seg)
+    }
+    $out -join '/'
+}
+
 function Read-Manifest {
-    # Returns a hashtable keyed by lowercase file BASENAME. Manifests in the wild
+    # Returns @{ meta = <hashtable keyed by lowercase file BASENAME>; writes = <list of
+    # normalized paths declaring writes_state> }. Manifests in the wild
     # use different field names for the same things, so this reads either shape:
     # name/file/kind/spoiler_class, or codename/real_name/local_path/known_stale.
     # An unknown shape is skipped rather than guessed at, and an unmatched file
     # still gets listed -- a stale manifest never hides an artifact.
     param([string]$ArtifactsDir)
     $index = @{}
+    # Save-key declarations are kept apart from the basename-keyed metadata, so two
+    # declared pages that share a file name in different subfolders both keep theirs.
+    $writes = New-Object System.Collections.Generic.List[string]
+    $result = @{ meta = $index; writes = $writes }
     $manifestPath = Join-Path $ArtifactsDir 'artifacts.json'
-    if (-not (Test-Path -LiteralPath $manifestPath)) { return $index }
+    if (-not (Test-Path -LiteralPath $manifestPath)) { return $result }
     try {
         $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
     } catch {
         Write-Warning "Unreadable manifest, listing files without it: $manifestPath"
-        return $index
+        return $result
     }
     # A bare list of entries, or { "artifacts": [...] } -- the same two shapes state_bridge.ps1 reads.
     $entries = if ($manifest -is [System.Array]) { $manifest } else { @($manifest.artifacts) }
@@ -159,16 +180,17 @@ function Read-Manifest {
             status   = if ($entry.PSObject.Properties.Name -contains 'status') { [string]$entry.status } else { $null }
             note     = if ($entry.PSObject.Properties.Name -contains 'spoiler_note') { [string]$entry.spoiler_note } else { $null }
             published = if ($entry.PSObject.Properties.Name -contains 'published_url') { [string]$entry.published_url } else { $null }
-            # The page may save marks through the save helper, so the launcher hands
-            # it this run's key. Stored as the declared path (relative to artifacts/),
-            # not a flag: this index is keyed by basename, and a same-named page in
-            # another subfolder must not get the key.
-            writesPath = if ($entry.PSObject.Properties.Name -contains 'writes_state' -and $entry.writes_state) {
-                (($rel -replace '\\', '/') -replace '^(\./)?(artifacts/)?', '').ToLowerInvariant()
-            } else { $null }
+        }
+        # The page may save marks through the save helper, so the launcher hands it
+        # this run's key. Kept as the declared path (relative to artifacts/), not a
+        # flag on the basename entry above: a same-named page in another subfolder
+        # must not get the key.
+        if ($entry.PSObject.Properties.Name -contains 'writes_state' -and $entry.writes_state) {
+            $w = ConvertTo-ArtifactRel $rel
+            if ($w) { $writes.Add($w) } else { Write-Warning "writes_state entry points outside artifacts/, ignored: $rel ($manifestPath)" }
         }
     }
-    return $index
+    return $result
 }
 
 $games = @()
@@ -184,8 +206,29 @@ foreach ($gameDir in (Get-ChildItem -LiteralPath $GuidesRoot -Directory | Sort-O
              Sort-Object FullName
     if (-not $files) { continue }
 
-    $manifest = Read-Manifest -ArtifactsDir $artifactsDir
+    $read = Read-Manifest -ArtifactsDir $artifactsDir
+    $manifest = $read.meta
     $items = @()
+
+    # Which scanned pages get the save key. A declaration names a page by its path under
+    # artifacts/. An older bare-name declaration ("full_map.html") still covers a page in
+    # a subfolder when exactly one page in the guide has that name; with two or more it
+    # is ambiguous, so none gets the key and the build says so.
+    $relOf = @{}
+    foreach ($file in $files) { $relOf[$file.FullName] = ConvertTo-ArtifactRel $file.FullName.Substring($artifactsDir.Length) }
+    $writesRel = @{}
+    foreach ($w in $read.writes) {
+        $hits = @($files | Where-Object { $relOf[$_.FullName] -eq $w })
+        if (-not $hits.Count -and $w -notmatch '/') {
+            $hits = @($files | Where-Object { $_.Name.ToLowerInvariant() -eq $w })
+            if ($hits.Count -gt 1) {
+                Write-Warning ("artifacts.json in {0} declares writes_state for '{1}', but {2} pages have that name; none gets the save key. Declare the page by its path under artifacts/." -f $gameDir.Name, $w, $hits.Count)
+                $hits = @()
+            }
+        }
+        if (-not $hits.Count) { Write-Warning ("artifacts.json in {0} declares writes_state for '{1}', but no page matches it." -f $gameDir.Name, $w) }
+        foreach ($h in $hits) { $writesRel[$relOf[$h.FullName]] = $true }
+    }
 
     foreach ($file in $files) {
         $key  = $file.Name.ToLowerInvariant()
@@ -236,7 +279,7 @@ foreach ($gameDir in (Get-ChildItem -LiteralPath $GuidesRoot -Directory | Sort-O
             status    = if ($meta) { $meta.status } else { $null }
             note      = if ($meta) { $meta.note } else { $null }
             published = if ($meta) { $meta.published } else { $null }
-            writes    = [bool]($meta -and $meta.writesPath -and $meta.writesPath -eq ($file.FullName.Substring($artifactsDir.Length).TrimStart('\') -replace '\\', '/').ToLowerInvariant())
+            writes    = [bool]$writesRel[$relOf[$file.FullName]]
             inManifest = [bool]$meta
         }
     }

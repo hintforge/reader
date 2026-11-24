@@ -58,7 +58,7 @@ If reader's platform differs from a source's platform, translate. PC mouse+keybo
 
 ## 9. CHECKPOINT.md is the resumption surface
 
-A fresh session -- local, Cowork, or another contributor -- should be able to resume by reading CHECKPOINT.md cold. Status, location, inventory, open threads, next step. Overwrite in place, ≤80 lines.
+A fresh session -- local, Cowork, or another contributor -- should be able to resume by reading CHECKPOINT.md cold. Status, location, inventory, open threads, next step. Overwrite in place and keep the file within the size limit in the [corpus format](https://github.com/hintforge/builder/blob/main/docs/corpus-format.md) §1, "CHECKPOINT size and the changelog archive"; when over it, drop resolved open threads and superseded lines from the play sections. Older build-log entries live in `archive/harness_changelog.md`: do not read that file at session start.
 
 ## 10. Each fact is structured for aggregation
 
